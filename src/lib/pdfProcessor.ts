@@ -17,10 +17,39 @@ export class PDFProcessor {
 
       console.log('Processing PDF buffer of size:', buffer.length);
 
-      // Import the core pdf-parse library directly to avoid debug mode
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdf = require('pdf-parse/lib/pdf-parse.js');
-      const data = await pdf(buffer);
+      // Disable debug mode to prevent test file access
+      const originalDebug = process.env.DEBUG;
+      process.env.DEBUG = '';
+
+      let data;
+      try {
+        // Use standard pdf-parse import
+        const pdf = await import('pdf-parse');
+        data = await pdf.default(buffer);
+
+        // Restore debug setting
+        process.env.DEBUG = originalDebug;
+      } catch (pdfError) {
+        // Restore debug setting in case of error
+        process.env.DEBUG = originalDebug;
+
+        // Check if the error is related to test file access
+        const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
+        if (errorMessage.includes('test/data') || errorMessage.includes('ENOENT')) {
+          console.warn('PDF parsing encountered test file access issue, retrying with alternative method');
+
+          // Try with a different approach - use require instead of import
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const pdfParse = require('pdf-parse');
+            data = await pdfParse(buffer);
+          } catch (secondError) {
+            throw new PDFParsingError('Failed to parse PDF after multiple attempts: ' + errorMessage);
+          }
+        } else {
+          throw pdfError;
+        }
+      }
 
       if (!data.text) {
         throw new PDFParsingError('Could not extract text from PDF');
