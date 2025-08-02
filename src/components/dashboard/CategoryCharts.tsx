@@ -141,9 +141,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
           <ResponsiveContainer width="100%" height={400}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="80%" data={currentData}>
               <RadialBar
-                label={{ position: 'insideStart', fill: '#fff' }}
                 background
-                clockWise
                 dataKey="count"
               >
                 {currentData.map((entry, index) => (

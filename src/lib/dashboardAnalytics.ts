@@ -424,14 +424,15 @@ export class DashboardAnalytics {
    * Filter operations by category
    */
   static filterByCategory(
-    operations: DashboardOperation[], 
+    operations: DashboardOperation[],
     category: string,
     type: 'Incoming' | 'Outgoing' | 'All' = 'All'
   ): DashboardOperation[] {
     return operations.filter(op => {
       if (type !== 'All' && op.status !== type) return false;
-      
-      const opCategory = op.status === 'Incoming' ? op.incomingCategory : op.outgoingCategory;
+
+      // Use the unified category system
+      const opCategory = op.category || op.categoryInfo?.name || 'Unknown';
       return opCategory === category;
     });
   }

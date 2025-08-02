@@ -138,24 +138,31 @@ export class ErrorHandler {
     // Validate each transaction has required fields
     for (let i = 0; i < transactions.length; i++) {
       const transaction = transactions[i];
-      
-      if (!transaction.id) {
+
+      // Type guard to check if transaction is an object
+      if (!transaction || typeof transaction !== 'object') {
+        throw new ValidationError(`Transaction ${i + 1} is not a valid object`);
+      }
+
+      const txn = transaction as Record<string, unknown>;
+
+      if (!txn.id) {
         throw new ValidationError(`Transaction ${i + 1} is missing ID`);
       }
-      
-      if (!transaction.date) {
+
+      if (!txn.date) {
         throw new ValidationError(`Transaction ${i + 1} is missing date`);
       }
-      
-      if (!transaction.operation) {
+
+      if (!txn.operation) {
         throw new ValidationError(`Transaction ${i + 1} is missing operation description`);
       }
-      
-      if (typeof transaction.amount !== 'number' || isNaN(transaction.amount)) {
+
+      if (typeof txn.amount !== 'number' || isNaN(txn.amount)) {
         throw new ValidationError(`Transaction ${i + 1} has invalid amount`);
       }
-      
-      if (!['DEBIT', 'CREDIT'].includes(transaction.type)) {
+
+      if (!['DEBIT', 'CREDIT'].includes(txn.type as string)) {
         throw new ValidationError(`Transaction ${i + 1} has invalid type`);
       }
     }

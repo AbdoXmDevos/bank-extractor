@@ -101,7 +101,10 @@ export class CategoryService {
   }
 
   public deleteCategory(id: string): boolean {
-    if (id === this.defaultCategory) return false; // Cannot delete default category
+    // Cannot delete default categories
+    if (id === this.getDefaultCategory('DEBIT') || id === this.getDefaultCategory('CREDIT')) {
+      return false;
+    }
     
     const categoryIndex = this.categories.findIndex(cat => cat.id === id);
     if (categoryIndex === -1) return false;
