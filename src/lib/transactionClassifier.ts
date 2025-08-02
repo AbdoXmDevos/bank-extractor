@@ -1,4 +1,4 @@
-import { Transaction, Category, CategoryStats } from '@/types/transaction';
+import { Transaction, CategoryStats } from '@/types/transaction';
 import { CategoryService } from './categoryService';
 
 export class TransactionClassifier {

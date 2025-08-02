@@ -105,7 +105,7 @@ export class FileHistoryService {
       const percentage = (used / total) * 100;
       
       return { used, total, percentage };
-    } catch (error) {
+    } catch {
       return { used: 0, total: 0, percentage: 0 };
     }
   }

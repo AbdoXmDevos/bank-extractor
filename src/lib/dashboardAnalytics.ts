@@ -100,6 +100,7 @@ export class DashboardAnalytics {
   private static getCategoryDisplayName(categoryId: string): string {
     // Import CategoryService dynamically to avoid circular dependencies
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { CategoryService } = require('./categoryService');
       const categoryService = CategoryService.getInstance();
       const category = categoryService.getCategoryById(categoryId);
@@ -115,6 +116,7 @@ export class DashboardAnalytics {
    */
   private static getCategoryColor(categoryId: string): string {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { CategoryService } = require('./categoryService');
       const categoryService = CategoryService.getInstance();
       const category = categoryService.getCategoryById(categoryId);
@@ -184,6 +186,7 @@ export class DashboardAnalytics {
 
       // Try to get category info from CategoryService
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { CategoryService } = require('./categoryService');
         const categoryService = CategoryService.getInstance();
         const category = categoryService.getCategoryById(categoryKey);

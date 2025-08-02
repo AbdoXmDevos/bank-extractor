@@ -126,7 +126,7 @@ export class ErrorHandler {
     }
   }
 
-  public static validateTransactionData(transactions: any[]): void {
+  public static validateTransactionData(transactions: unknown[]): void {
     if (!Array.isArray(transactions)) {
       throw new ValidationError('Invalid transaction data format');
     }

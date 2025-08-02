@@ -211,8 +211,8 @@ export default function ExtractOperationsPage() {
       setPendingFileName(jsonFileName);
       setShowDownloadModal(true);
 
-    } catch (error) {
-      console.error('Failed to save operations:', error);
+    } catch (err) {
+      console.error('Failed to save operations:', err);
       alert('Failed to save operations. Please try again.');
     }
   };

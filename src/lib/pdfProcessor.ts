@@ -18,6 +18,7 @@ export class PDFProcessor {
       console.log('Processing PDF buffer of size:', buffer.length);
 
       // Import the core pdf-parse library directly to avoid debug mode
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pdf = require('pdf-parse/lib/pdf-parse.js');
       const data = await pdf(buffer);
 
@@ -78,7 +79,7 @@ export class PDFProcessor {
 
     // Try multiple parsing strategies
     console.log('=== Strategy 1: Lines starting with dates ===');
-    let strategy1Count = this.tryDateStartStrategy(lines, transactionKeywords, transactions);
+    const strategy1Count = this.tryDateStartStrategy(lines, transactionKeywords, transactions);
 
     if (strategy1Count === 0) {
       console.log('=== Strategy 2: Lines containing dates anywhere ===');
@@ -204,7 +205,7 @@ export class PDFProcessor {
       const date = dateMatch[1];
 
       // Remove the date from the line to get the rest
-      let remainingLine = line.substring(dateMatch[0].length).trim();
+      const remainingLine = line.substring(dateMatch[0].length).trim();
 
       // Try different ways to extract the operation description
       let operation = '';
@@ -287,7 +288,7 @@ export class PDFProcessor {
       }
 
       // Extract operation description (remove date and amounts)
-      let operation = line
+      const operation = line
         .replace(/\d{2}\/\d{2}\/\d{4}/g, '') // Remove dates
         .replace(/\d{1,3}(?:[,\s]\d{3})*[,\.]\d{2}/g, '') // Remove amounts
         .trim();
@@ -462,7 +463,6 @@ export class PDFProcessor {
   }
 
   private isHeaderLine(line: string): boolean {
-    const upperLine = line.toUpperCase();
 
     // Be more specific about what constitutes a header line
     const headerPatterns = [
