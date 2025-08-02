@@ -14,11 +14,9 @@ import {
   Area,
   BarChart,
   Bar,
-  ComposedChart,
-  ScatterChart,
-  Scatter
+  ComposedChart
 } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, Activity, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, Activity } from 'lucide-react';
 import { DashboardOperation, DashboardAnalytics } from '@/lib/dashboardAnalytics';
 
 interface TrendChartsProps {
@@ -44,7 +42,6 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
   }, [operations, timeRange]);
 
   const timeSeriesData = DashboardAnalytics.generateTimeSeriesData(filteredOperations);
-  const dailyActivity = DashboardAnalytics.getDailyActivity(filteredOperations);
   
   // Calculate moving averages
   const dataWithMovingAverage = useMemo(() => {
@@ -94,12 +91,16 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
   }, [timeSeriesData]);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ color: string; name: string; value: number }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
               {entry.name}: {entry.value}
             </p>
@@ -273,7 +274,7 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
               ].map(({ key, label }) => (
                 <button
                   key={key}
-                  onClick={() => setTimeRange(key as any)}
+                  onClick={() => setTimeRange(key as '7d' | '30d' | 'all')}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     timeRange === key
                       ? 'bg-purple-100 text-purple-700 border border-purple-200'
@@ -295,7 +296,7 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
             ].map(({ key, label }) => (
               <button
                 key={key}
-                onClick={() => setChartType(key as any)}
+                onClick={() => setChartType(key as 'line' | 'area' | 'bar' | 'composed')}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   chartType === key
                     ? 'bg-blue-100 text-blue-700 border border-blue-200'

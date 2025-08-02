@@ -123,11 +123,10 @@ describe('PDFProcessor', () => {
 
 describe('CategoryService Integration', () => {
   let pdfProcessor: PDFProcessor;
-  let categoryService: CategoryService;
 
   beforeEach(() => {
     pdfProcessor = new PDFProcessor();
-    categoryService = CategoryService.getInstance();
+    CategoryService.getInstance();
   });
 
   it('should categorize transactions based on keywords', async () => {

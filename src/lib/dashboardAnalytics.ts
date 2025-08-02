@@ -1,6 +1,6 @@
 // Dashboard analytics utilities for processing transaction data
 
-import { ParsedPDFResult, Transaction } from '@/types/transaction';
+import { ParsedPDFResult } from '@/types/transaction';
 
 export interface DashboardOperation {
   id: number;
@@ -59,7 +59,7 @@ export class DashboardAnalytics {
       totalOperations: number;
       filteredOperations: number;
       extractDate: string;
-      filters: any;
+      filters: Record<string, unknown>;
       groupBy: string;
     };
   } {
@@ -105,7 +105,7 @@ export class DashboardAnalytics {
       const categoryService = CategoryService.getInstance();
       const category = categoryService.getCategoryById(categoryId);
       return category ? category.name : categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
-    } catch (error) {
+    } catch {
       // Fallback if CategoryService is not available
       return categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
     }
@@ -121,7 +121,7 @@ export class DashboardAnalytics {
       const categoryService = CategoryService.getInstance();
       const category = categoryService.getCategoryById(categoryId);
       return category ? category.color : '#6B7280';
-    } catch (error) {
+    } catch {
       // Fallback color if CategoryService is not available
       return '#6B7280';
     }
@@ -194,7 +194,7 @@ export class DashboardAnalytics {
           categoryName = category.name;
           categoryColor = category.color;
         }
-      } catch (error) {
+      } catch {
         // Fallback to categoryInfo if available
         categoryName = op.categoryInfo?.name || categoryKey || 'Unknown';
         categoryColor = op.categoryInfo?.color || '#6B7280';
@@ -324,7 +324,7 @@ export class DashboardAnalytics {
       hourMap.set(i, 0);
     }
 
-    operations.forEach(op => {
+    operations.forEach(() => {
       // Try to extract hour from operation text or use random distribution
       // This is a placeholder - actual implementation would depend on data format
       const randomHour = Math.floor(Math.random() * 24);
