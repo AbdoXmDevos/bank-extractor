@@ -17,9 +17,26 @@ interface ExtractOperationsResult {
   extractDate: string;
 }
 
+
+
+// Add OPTIONS handler for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('Extract Operations API called');
+    console.log('Request method:', request.method);
+    console.log('Request URL:', request.url);
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -73,20 +90,34 @@ export async function POST(request: NextRequest) {
       extractDate: new Date().toISOString()
     };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: result
     });
 
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    return response;
+
   } catch (error) {
     console.error('Extract operations failed:', error);
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to process PDF'
       },
       { status: 500 }
     );
+
+    // Add CORS headers to error response too
+    errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+    errorResponse.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    errorResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    return errorResponse;
   }
 }
 
@@ -252,8 +283,10 @@ function isHeaderLine(line: string): boolean {
 }
 
 export async function GET() {
-  return NextResponse.json(
-    { error: 'Method not allowed. Use POST to upload files.' },
-    { status: 405 }
-  );
+  return NextResponse.json({
+    success: true,
+    message: 'Extract Operations API is working. Use POST to upload files.',
+    timestamp: new Date().toISOString(),
+    methods: ['POST', 'OPTIONS']
+  });
 }

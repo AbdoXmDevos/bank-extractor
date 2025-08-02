@@ -108,16 +108,33 @@ export default function ExtractOperationsPage() {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Making request to /api/extract-operations');
       const response = await fetch('/api/extract-operations', {
         method: 'POST',
         body: formData,
       });
 
-      const result = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to process PDF');
+        console.error('Response not OK:', response.status, response.statusText);
+
+        // Try to get error message from response
+        let errorMessage = 'Failed to process PDF';
+        try {
+          const errorResult = await response.json();
+          errorMessage = errorResult.error || errorMessage;
+        } catch (jsonError) {
+          console.error('Failed to parse error response as JSON:', jsonError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
+      console.log('API response:', result);
 
       if (result.success && result.data) {
         setOperations(result.data.operations);
