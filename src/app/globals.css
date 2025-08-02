@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Ensure text is visible in dashboard components */
+.bg-white {
+  color: #111827; /* text-gray-900 equivalent */
+}
+
+/* Override any inherited text colors for dashboard elements */
+.bg-white h1,
+.bg-white h2,
+.bg-white h3,
+.bg-white h4,
+.bg-white h5,
+.bg-white h6,
+.bg-white p,
+.bg-white span,
+.bg-white div {
+  color: inherit;
+}
+
+/* Ensure specific text color classes work */
+.text-gray-900 {
+  color: #111827 !important;
+}
+
+.text-gray-800 {
+  color: #1f2937 !important;
+}
+
+.text-gray-700 {
+  color: #374151 !important;
+}
+
+.text-gray-600 {
+  color: #4b5563 !important;
+}
+
+.text-gray-500 {
+  color: #6b7280 !important;
+}
+
+/* Ensure Recharts text elements are visible */
+.recharts-text {
+  fill: #374151 !important; /* text-gray-700 */
+}
+
+.recharts-cartesian-axis-tick-value {
+  fill: #4b5563 !important; /* text-gray-600 */
+}
+
+.recharts-legend-item-text {
+  color: #374151 !important; /* text-gray-700 */
+}
+
+.recharts-default-tooltip {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.recharts-tooltip-label {
+  color: #111827 !important; /* text-gray-900 */
+}
+
+.recharts-tooltip-item {
+  color: #374151 !important; /* text-gray-700 */
+}

@@ -1,0 +1,130 @@
+{
+  "categories": [
+    {
+      "id": "shopping",
+      "name": "Shopping",
+      "keywords": ["BIM", "MARJANE", "BERSHKA", "IKEA", "CARIBOU", "ZARA", "H&M", "CARREFOUR", "ACIMA", "LABEL VIE", "MAGASIN", "BOUTIQUE", "STORE"],
+      "color": "#10B981",
+      "description": "Retail shopping and purchases",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "internet_payment",
+      "name": "Internet Payment",
+      "keywords": ["SPOTIFY", "GOOGLE YOUTU", "VERCEL", "SPACESHIP.CO", "AIRBNB", "NETFLIX", "AMAZON", "PAYPAL", "INTERNET", "ONLINE", "WEB", "DIGITAL"],
+      "color": "#3B82F6",
+      "description": "Online services and subscriptions",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "food",
+      "name": "Food & Dining",
+      "keywords": ["SUSHI", "BURGER", "MORSO", "RESTAURANT", "CAFE", "PIZZA", "MCDONALDS", "KFC", "FOOD"],
+      "color": "#F59E0B",
+      "description": "Restaurants and food purchases",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "transfer_sent",
+      "name": "Transfer Sent",
+      "keywords": ["VIREMENT", "TRANSFER", "TRANSFERT", "ENVOI", "FRIEND", "AMI", "FAMILLE", "FAMILY", "PERSONNE"],
+      "color": "#8B5CF6",
+      "description": "Money transfers sent to friends and family",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "transfer_received",
+      "name": "Transfer Received",
+      "keywords": ["VIREMENT RECU", "TRANSFER RECEIVED", "TRANSFERT RECU", "RECEPTION", "RECEIVED", "RECU", "FRIEND", "AMI", "FAMILLE", "FAMILY"],
+      "color": "#8B5CF6",
+      "description": "Money transfers received from friends and family",
+      "applicableFor": ["CREDIT"]
+    },
+    {
+      "id": "cash_withdrawal",
+      "name": "Cash Withdrawal",
+      "keywords": ["RETRAIT", "ATM", "DISTRIBUTEUR", "CASH", "ESPECES", "GAB"],
+      "color": "#EF4444",
+      "description": "ATM withdrawals and cash operations",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "card_payment",
+      "name": "Card Payment",
+      "keywords": ["PAIEMENT PAR CARTE", "CARTE", "PAYMENT", "PAIEMENT"],
+      "color": "#06B6D4",
+      "description": "General card payments",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "bank_fees",
+      "name": "Bank Fees",
+      "keywords": ["FRAIS", "COMMISSION", "AGIOS", "COTISATION", "ABONNEMENT"],
+      "color": "#DC2626",
+      "description": "Bank charges and fees",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "salary",
+      "name": "Salary",
+      "keywords": ["SALAIRE", "SALARY", "PAIE", "REMUNERATION", "TRAITEMENT", "WAGES", "PAYROLL"],
+      "color": "#059669",
+      "description": "Salary and employment income",
+      "applicableFor": ["CREDIT"]
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "keywords": ["LYDEC", "REDAL", "AMENDIS", "ELECTRICITE", "EAU", "GAZ", "TELEPHONE"],
+      "color": "#7C3AED",
+      "description": "Utility bills and services",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "transport",
+      "name": "Transport",
+      "keywords": ["CARBURANT", "ESSENCE", "GASOIL", "TAXI", "BUS", "TRAIN", "TRANSPORT"],
+      "color": "#F97316",
+      "description": "Transportation and fuel",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "refund",
+      "name": "Refund",
+      "keywords": ["REMBOURSEMENT", "REFUND", "RETOUR", "CREDIT", "RESTITUTION", "ANNULATION"],
+      "color": "#10B981",
+      "description": "Refunds and reimbursements",
+      "applicableFor": ["CREDIT"]
+    },
+    {
+      "id": "investment",
+      "name": "Investment Income",
+      "keywords": ["DIVIDENDE", "DIVIDEND", "INTERET", "INTEREST", "PLACEMENT", "INVESTMENT", "BOURSE", "STOCK"],
+      "color": "#F59E0B",
+      "description": "Investment returns and dividends",
+      "applicableFor": ["CREDIT"]
+    }
+  ],
+  "defaultCategories": {
+    "DEBIT": "other_expense",
+    "CREDIT": "other_income"
+  },
+  "otherCategories": [
+    {
+      "id": "other_expense",
+      "name": "Other Expense",
+      "keywords": [],
+      "color": "#6B7280",
+      "description": "Other outgoing transactions",
+      "applicableFor": ["DEBIT"]
+    },
+    {
+      "id": "other_income",
+      "name": "Other Income",
+      "keywords": [],
+      "color": "#6B7280",
+      "description": "Other incoming transactions",
+      "applicableFor": ["CREDIT"]
+    }
+  ]
+}
