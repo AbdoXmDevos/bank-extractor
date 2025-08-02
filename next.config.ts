@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
   env: {
     // Disable debug mode for pdf-parse to prevent test file access
     DEBUG: '',
-    NODE_ENV: 'production',
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
