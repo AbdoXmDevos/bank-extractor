@@ -9,10 +9,7 @@ const nextConfig: NextConfig = {
     // Ignore TypeScript errors during build (optional)
     ignoreBuildErrors: false,
   },
-  env: {
-    // Disable debug mode for pdf-parse to prevent test file access
-    DEBUG: '',
-  },
+
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Prevent access to test files by aliasing them to empty modules
