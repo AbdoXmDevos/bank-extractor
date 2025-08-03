@@ -66,29 +66,9 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Parse PDF using dynamic import to avoid build issues
-    let data;
-    try {
-      const pdf = await import('pdf-parse');
-      data = await pdf.default(buffer);
-    } catch (pdfError) {
-      // Check if the error is related to test file access
-      const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
-      if (errorMessage.includes('test/data') || errorMessage.includes('ENOENT')) {
-        console.warn('PDF parsing encountered test file access issue, retrying with alternative method');
-
-        // Try with a different approach - use require instead of import
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const pdfParse = require('pdf-parse');
-          data = await pdfParse(buffer);
-        } catch (secondError) {
-          throw new Error('Failed to parse PDF after multiple attempts: ' + errorMessage);
-        }
-      } else {
-        throw pdfError;
-      }
-    }
+    // Parse PDF using dynamic import
+    const pdf = await import('pdf-parse');
+    const data = await pdf.default(buffer);
     console.log('PDF parsed successfully. Pages:', data.numpages);
     console.log('Extracted text length:', data.text.length);
 

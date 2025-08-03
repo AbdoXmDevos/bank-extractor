@@ -23,22 +23,7 @@ export class PDFProcessor {
         const pdf = await import('pdf-parse');
         data = await pdf.default(buffer);
       } catch (pdfError) {
-        // Check if the error is related to test file access
-        const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
-        if (errorMessage.includes('test/data') || errorMessage.includes('ENOENT')) {
-          console.warn('PDF parsing encountered test file access issue, retrying with alternative method');
-
-          // Try with a different approach - use require instead of import
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const pdfParse = require('pdf-parse');
-            data = await pdfParse(buffer);
-          } catch (secondError) {
-            throw new PDFParsingError('Failed to parse PDF after multiple attempts: ' + errorMessage);
-          }
-        } else {
-          throw pdfError;
-        }
+        throw pdfError;
       }
 
       if (!data.text) {

@@ -12,10 +12,10 @@ const nextConfig: NextConfig = {
 
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Prevent access to test files by aliasing them to empty modules
+      // Redirect test file access to public directory
       config.resolve.alias = {
         ...config.resolve.alias,
-        './test/data/05-versions-space.pdf': false,
+        './test/data/05-versions-space.pdf': require.resolve('./public/test-data/05-versions-space.pdf'),
       };
     }
 
