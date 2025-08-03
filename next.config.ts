@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     // Ignore TypeScript errors during build (optional)
     ignoreBuildErrors: false,
   },
-
+  serverExternalPackages: ['pdf-parse'],
 
 };
 
