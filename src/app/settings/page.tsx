@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Category } from '@/types/transaction';
-import { Settings, Plus, Edit2, Trash2, Save, X, Target, Info, ArrowDown, ArrowUp, Filter } from 'lucide-react';
+import { Settings, Plus, Edit2, Trash2, Save, X, Target, Info, ArrowDown, ArrowUp, Filter, Database, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import CategoryBadge from '@/components/CategoryBadge';
 
 export default function SettingsPage() {
@@ -10,6 +10,17 @@ export default function SettingsPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [filterType, setFilterType] = useState<'ALL' | 'DEBIT' | 'CREDIT'>('ALL');
+  const [dbStatus, setDbStatus] = useState<{
+    connected: boolean;
+    operationsCount: number;
+    loading: boolean;
+    error: string | null;
+  }>({
+    connected: false,
+    operationsCount: 0,
+    loading: true,
+    error: null
+  });
   const [newCategory, setNewCategory] = useState({
     name: '',
     keywords: '',
@@ -20,6 +31,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchCategories();
+    checkDatabaseStatus();
   }, []);
 
   const fetchCategories = async () => {
@@ -31,6 +43,37 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const checkDatabaseStatus = async () => {
+    try {
+      setDbStatus(prev => ({ ...prev, loading: true, error: null }));
+      const response = await fetch('/api/test-db');
+      const result = await response.json();
+
+      if (result.success) {
+        setDbStatus({
+          connected: true,
+          operationsCount: result.operationsCount || 0,
+          loading: false,
+          error: null
+        });
+      } else {
+        setDbStatus({
+          connected: false,
+          operationsCount: 0,
+          loading: false,
+          error: result.error || 'Unknown error'
+        });
+      }
+    } catch (error) {
+      setDbStatus({
+        connected: false,
+        operationsCount: 0,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Connection failed'
+      });
     }
   };
 
@@ -288,6 +331,75 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Database Status */}
+        <div className="bg-white rounded-lg shadow-sm border mb-8">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Database className="w-5 h-5 mr-2 text-blue-600" />
+                Database Status
+              </h3>
+              <button
+                onClick={checkDatabaseStatus}
+                disabled={dbStatus.loading}
+                className="flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 mr-1 ${dbStatus.loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-3">
+                {dbStatus.loading ? (
+                  <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />
+                ) : dbStatus.connected ? (
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Connection</p>
+                  <p className={`text-sm ${dbStatus.connected ? 'text-green-600' : 'text-red-600'}`}>
+                    {dbStatus.loading ? 'Checking...' : dbStatus.connected ? 'Connected' : 'Disconnected'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600">#</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Operations Stored</p>
+                  <p className="text-sm text-gray-600">
+                    {dbStatus.loading ? 'Loading...' : dbStatus.operationsCount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-purple-600">DB</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Storage</p>
+                  <p className="text-sm text-gray-600">Neon Database</p>
+                </div>
+              </div>
+            </div>
+
+            {dbStatus.error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-800">
+                  <strong>Error:</strong> {dbStatus.error}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

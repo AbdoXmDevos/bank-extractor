@@ -1,0 +1,535 @@
+{
+  "operations": [
+    {
+      "id": 1,
+      "date": "01/04",
+      "operation": "PAIEMENT INTERNET NATIONAL CARTE 4112 WIN BY INWI N3DS",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 2,
+      "date": "02/04",
+      "operation": "VIREMENT EMIS EN FAVEUR DE BENEFICIAIRE EL MEHDI SAKOU",
+      "status": "Incoming",
+      "category": "other_income",
+      "categoryInfo": {
+        "name": "Other Income",
+        "color": "#6B7280"
+      }
+    },
+    {
+      "id": 3,
+      "date": "02/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1714",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 4,
+      "date": "02/04",
+      "operation": "PAIEMENT INTERNET NATIONAL CARTE 4112 WIN BY INWI N3DS",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 5,
+      "date": "02/04",
+      "operation": "PAIEMENT FACTURE SRM CASA SETTATCIHMOBILEBILLING PAY",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 6,
+      "date": "02/04",
+      "operation": "VIRT RECU DE LA PART XELOPS TECHNOLOGY",
+      "status": "Incoming",
+      "category": "transfer_received",
+      "categoryInfo": {
+        "name": "Transfer Received",
+        "color": "#8B5CF6"
+      }
+    },
+    {
+      "id": 7,
+      "date": "03/04",
+      "operation": "PAIEMENT PAR CARTE 4112 IKEA STORE G",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 8,
+      "date": "03/04",
+      "operation": "PAIEMENT PAR CARTE 4112 IKEA RESTAURANT ET B",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 9,
+      "date": "03/04",
+      "operation": "RETRAIT CARTE 4112 12H56 GAB AUTRE BANQUE",
+      "status": "Outgoing",
+      "category": "cash_withdrawal",
+      "categoryInfo": {
+        "name": "Cash Withdrawal",
+        "color": "#EF4444"
+      }
+    },
+    {
+      "id": 10,
+      "date": "06/04",
+      "operation": "PAIEMENT PAR CARTE 4112 SUSHI CLUB MERCATO",
+      "status": "Outgoing",
+      "category": "food",
+      "categoryInfo": {
+        "name": "Food & Dining",
+        "color": "#F59E0B"
+      }
+    },
+    {
+      "id": 11,
+      "date": "07/04",
+      "operation": "PAIEMENT INTERNET INTERNATIONAL CARTE4112 GOOGLE YOUTU",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 12,
+      "date": "08/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1849",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 13,
+      "date": "09/04",
+      "operation": "PAIEMENT INTERNET INTERNATIONAL CARTE4112 VERCEL INC.",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 14,
+      "date": "10/04",
+      "operation": "PAIEMENT FACTURE SRM CASA SETTATCIHMOBILEBILLING PAY",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 15,
+      "date": "10/04",
+      "operation": "PAIEMENT FACTURE SRM CASABLANCA CIHMOBILEBILLING PAY",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 16,
+      "date": "11/04",
+      "operation": "VIREMENT EMIS EN FAVEUR DE BENEFICIAIRE MOHAMED KAMAL",
+      "status": "Incoming",
+      "category": "other_income",
+      "categoryInfo": {
+        "name": "Other Income",
+        "color": "#6B7280"
+      }
+    },
+    {
+      "id": 17,
+      "date": "11/04",
+      "operation": "PAIEMENT PAR CARTE 4112 MORSO GROUP",
+      "status": "Outgoing",
+      "category": "food",
+      "categoryInfo": {
+        "name": "Food & Dining",
+        "color": "#F59E0B"
+      }
+    },
+    {
+      "id": 18,
+      "date": "12/04",
+      "operation": "PAIEMENT PAR CARTE 4112 JMA AERIA MALL",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 19,
+      "date": "13/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1887",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 20,
+      "date": "14/04",
+      "operation": "VIREMENT RECU DE MOHAMED SAAD KAOUANI",
+      "status": "Incoming",
+      "category": "transfer_received",
+      "categoryInfo": {
+        "name": "Transfer Received",
+        "color": "#8B5CF6"
+      }
+    },
+    {
+      "id": 21,
+      "date": "14/04",
+      "operation": "VIREMENT EMIS EN FAVEUR DE BENEFICIAIRE ABDLHAK ELOUAR",
+      "status": "Incoming",
+      "category": "other_income",
+      "categoryInfo": {
+        "name": "Other Income",
+        "color": "#6B7280"
+      }
+    },
+    {
+      "id": 22,
+      "date": "14/04",
+      "operation": "PAIEMENT PAR CARTE 4112 KAZYON M028 ANDALOUS",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 23,
+      "date": "15/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1714",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 24,
+      "date": "16/04",
+      "operation": "PAIEMENT PAR CARTE 4112 AFRIQUIA I BERLAY",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 25,
+      "date": "16/04",
+      "operation": "PAIEMENT INTERNET INTERNATIONAL CARTE4112 SPOTIFY AB",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 26,
+      "date": "17/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1714",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 27,
+      "date": "18/04",
+      "operation": "VIREMENT EMIS EN FAVEUR DE BENEFICIAIRE ABDESSAMAD KAR",
+      "status": "Incoming",
+      "category": "other_income",
+      "categoryInfo": {
+        "name": "Other Income",
+        "color": "#6B7280"
+      }
+    },
+    {
+      "id": 28,
+      "date": "18/04",
+      "operation": "VIREMENT RECU DE YESSINE JAOUA",
+      "status": "Incoming",
+      "category": "transfer_received",
+      "categoryInfo": {
+        "name": "Transfer Received",
+        "color": "#8B5CF6"
+      }
+    },
+    {
+      "id": 29,
+      "date": "19/04",
+      "operation": "RETRAIT CARTE 4112 20H15 GAB CIH CIH CASABLANCA",
+      "status": "Outgoing",
+      "category": "cash_withdrawal",
+      "categoryInfo": {
+        "name": "Cash Withdrawal",
+        "color": "#EF4444"
+      }
+    },
+    {
+      "id": 30,
+      "date": "20/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BERSHKA MM",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 31,
+      "date": "20/04",
+      "operation": "PAIEMENT PAR CARTE 4112 MARJANE M.M G",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 32,
+      "date": "20/04",
+      "operation": "PAIEMENT PAR CARTE 4112 TOWN TEAM",
+      "status": "Outgoing",
+      "category": "card_payment",
+      "categoryInfo": {
+        "name": "Card Payment",
+        "color": "#06B6D4"
+      }
+    },
+    {
+      "id": 33,
+      "date": "21/04",
+      "operation": "VIREMENT RECU DE MOHAMED SAAD KAOUANI",
+      "status": "Incoming",
+      "category": "transfer_received",
+      "categoryInfo": {
+        "name": "Transfer Received",
+        "color": "#8B5CF6"
+      }
+    },
+    {
+      "id": 34,
+      "date": "21/04",
+      "operation": "VIREMENT RECU DE EL MEHDI SAKOUT",
+      "status": "Incoming",
+      "category": "transfer_received",
+      "categoryInfo": {
+        "name": "Transfer Received",
+        "color": "#8B5CF6"
+      }
+    },
+    {
+      "id": 35,
+      "date": "21/04",
+      "operation": "PAIEMENT PAR CARTE 4112 LADOZE STREET BURGER",
+      "status": "Outgoing",
+      "category": "food",
+      "categoryInfo": {
+        "name": "Food & Dining",
+        "color": "#F59E0B"
+      }
+    },
+    {
+      "id": 36,
+      "date": "21/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1682",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 37,
+      "date": "22/04",
+      "operation": "PAIEMENT PAR CARTE 4112 MARJANE MARKET EMILE",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 38,
+      "date": "22/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1714",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 39,
+      "date": "22/04",
+      "operation": "PAIEMENT INTERNET INTERNATIONAL CARTE4112 SPACESHIP.CO",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 40,
+      "date": "23/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1887",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 41,
+      "date": "25/04",
+      "operation": "PAIEMENT PAR CARTE 4112 CARIBOU BOURGOGNE",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 42,
+      "date": "26/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1887",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 43,
+      "date": "27/04",
+      "operation": "PAIEMENT INTERNET NATIONAL CARTE 4112 WIN BY INWI N3DS",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 44,
+      "date": "28/04",
+      "operation": "RETRAIT CARTE 4112 18H41 GAB AUTRE BANQUE",
+      "status": "Outgoing",
+      "category": "cash_withdrawal",
+      "categoryInfo": {
+        "name": "Cash Withdrawal",
+        "color": "#EF4444"
+      }
+    },
+    {
+      "id": 45,
+      "date": "29/04",
+      "operation": "PAIEMENT PAR CARTE 4112 BIM 1714",
+      "status": "Outgoing",
+      "category": "shopping",
+      "categoryInfo": {
+        "name": "Shopping",
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": 46,
+      "date": "30/04",
+      "operation": "PAIEMENT INTERNET INTERNATIONAL CARTE4112 AIRBNB HM5B3",
+      "status": "Outgoing",
+      "category": "internet_payment",
+      "categoryInfo": {
+        "name": "Internet Payment",
+        "color": "#3B82F6"
+      }
+    },
+    {
+      "id": 47,
+      "date": "30/04",
+      "operation": "VIRT RECU DE LA PART XELOPS TECHNOLOGY",
+      "status": "Incoming",
+      "category": "transfer_received",
+      "categoryInfo": {
+        "name": "Transfer Received",
+        "color": "#8B5CF6"
+      }
+    }
+  ],
+  "metadata": {
+    "fileName": "81498872110129002025-04.pdf",
+    "totalOperations": 47,
+    "filteredOperations": 47,
+    "extractDate": "2025-08-03T22:53:23.101Z",
+    "filters": {
+      "searchText": "",
+      "status": "all",
+      "category": "all",
+      "dateFrom": "",
+      "dateTo": ""
+    },
+    "groupBy": "none"
+  }
+}

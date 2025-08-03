@@ -215,13 +215,18 @@ export default function ExtractOperationsPage() {
         },
         body: JSON.stringify({
           fileName: jsonFileName,
+          originalFileName: fileName,
+          fileSize: dashboardData.operations.length * 100, // Rough estimate
           data: dashboardData
         })
       });
 
       if (!saveResponse.ok) {
-        throw new Error('Failed to save operations to server');
+        throw new Error('Failed to save operations to database');
       }
+
+      const saveResult = await saveResponse.json();
+      console.log('Operations saved to database:', saveResult);
 
       // Store data for modal and show download confirmation
       setPendingDashboardData(dashboardData);
@@ -229,8 +234,8 @@ export default function ExtractOperationsPage() {
       setShowDownloadModal(true);
 
     } catch (err) {
-      console.error('Failed to save operations:', err);
-      alert('Failed to save operations. Please try again.');
+      console.error('Failed to save operations to database:', err);
+      alert('Failed to save operations to database. Please try again.');
     }
   };
 

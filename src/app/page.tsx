@@ -30,13 +30,12 @@ interface DashboardData {
 }
 
 interface SavedOperationFile {
-  fileName: string;
-  size: number;
-  createdAt: string;
-  modifiedAt: string;
-  metadata: DashboardData['metadata'] | null;
-  operationsCount: number;
-  error?: string;
+  id: number;
+  file_name: string;
+  original_file_name?: string;
+  created_at: string;
+  file_size?: number;
+  transaction_count?: number;
 }
 
 export default function Home() {
@@ -53,7 +52,7 @@ export default function Home() {
       const response = await fetch('/api/load-operations');
       if (response.ok) {
         const result = await response.json();
-        setSavedFiles(result.files || []);
+        setSavedFiles(result.operations || []);
       }
     } catch (error) {
       console.error('Failed to load saved files:', error);
@@ -121,15 +120,16 @@ export default function Home() {
   };
 
   // Delete saved operations file
-  const deleteSavedFile = async (fileName: string) => {
+  const deleteSavedFile = async (file: SavedOperationFile) => {
+    const displayName = file.original_file_name || file.file_name;
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone and will permanently remove the file from your saved operations.`
+      `Are you sure you want to delete "${displayName}"?\n\nThis action cannot be undone and will permanently remove the operation from your database.`
     );
 
     if (!confirmDelete) return;
 
     // Add to deleting files set
-    setDeletingFiles(prev => new Set(prev).add(fileName));
+    setDeletingFiles(prev => new Set(prev).add(file.file_name));
 
     try {
       const response = await fetch('/api/save-operations', {
@@ -137,32 +137,35 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileName }),
+        body: JSON.stringify({
+          id: file.id,
+          fileName: file.file_name
+        }),
       });
 
       if (response.ok) {
         // Remove from saved files list
-        setSavedFiles(prev => prev.filter(file => file.fileName !== fileName));
+        setSavedFiles(prev => prev.filter(f => f.id !== file.id));
 
         // Remove from loaded operations list if it's there
         setLoadedOperationsList(prev =>
-          prev.filter(item => item.metadata.fileName !== fileName)
+          prev.filter(item => item.metadata.fileName !== file.file_name)
         );
 
         // Show success message
-        alert('File deleted successfully');
+        alert('Operation deleted successfully from database');
       } else {
         const error = await response.json();
-        alert(`Failed to delete file: ${error.error || 'Unknown error'}`);
+        alert(`Failed to delete operation: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error deleting file:', error);
-      alert('Failed to delete file. Please try again.');
+      console.error('Error deleting operation:', error);
+      alert('Failed to delete operation. Please try again.');
     } finally {
       // Remove from deleting files set
       setDeletingFiles(prev => {
         const newSet = new Set(prev);
-        newSet.delete(fileName);
+        newSet.delete(file.file_name);
         return newSet;
       });
     }
@@ -358,48 +361,43 @@ export default function Home() {
 
               <div className="space-y-3">
                 {savedFiles.slice(0, 5).map((file) => (
-                  <div key={file.fileName} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div key={file.file_name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-1">
                         <FileText className="w-4 h-4 text-blue-500" />
                         <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {file.metadata?.fileName || file.fileName}
+                          {file.original_file_name || file.file_name}
                         </h4>
-                        {file.error && (
-                          <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
-                            Error
-                          </span>
-                        )}
                       </div>
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span className="flex items-center">
                           <Hash className="w-3 h-3 mr-1" />
-                          {file.operationsCount} operations
+                          {file.transaction_count || 0} operations
                         </span>
                         <span className="flex items-center">
                           <Calendar className="w-3 h-3 mr-1" />
-                          {new Date(file.createdAt).toLocaleDateString()}
+                          {new Date(file.created_at).toLocaleDateString()}
                         </span>
                         <span>
-                          {(file.size / 1024).toFixed(1)} KB
+                          {((file.file_size || 0) / 1024).toFixed(1)} KB
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <button
-                        onClick={() => loadOperationsFile(file.fileName)}
-                        disabled={!!file.error || loadedOperationsList.some(item => item.metadata.fileName === (file.metadata?.fileName || file.fileName))}
+                        onClick={() => loadOperationsFile(file.file_name)}
+                        disabled={loadedOperationsList.some(item => item.metadata.fileName === file.file_name)}
                         className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {loadedOperationsList.some(item => item.metadata.fileName === (file.metadata?.fileName || file.fileName)) ? 'Loaded' : 'Add to List'}
+                        {loadedOperationsList.some(item => item.metadata.fileName === file.file_name) ? 'Loaded' : 'Add to List'}
                       </button>
                       <button
-                        onClick={() => deleteSavedFile(file.fileName)}
-                        disabled={deletingFiles.has(file.fileName)}
+                        onClick={() => deleteSavedFile(file)}
+                        disabled={deletingFiles.has(file.file_name)}
                         className="p-1 text-gray-400 hover:text-red-600 focus:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={deletingFiles.has(file.fileName) ? "Deleting..." : "Delete file"}
+                        title={deletingFiles.has(file.file_name) ? "Deleting..." : "Delete file"}
                       >
-                        {deletingFiles.has(file.fileName) ? (
+                        {deletingFiles.has(file.file_name) ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
                         ) : (
                           <Trash2 className="w-4 h-4" />

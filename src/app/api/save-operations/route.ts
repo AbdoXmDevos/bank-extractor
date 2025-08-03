@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, unlink } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { OperationsService } from '@/lib/operationsService';
+import { initializeDatabase } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileName, data } = await request.json();
+    const { fileName, data, originalFileName, fileSize } = await request.json();
 
     if (!fileName || !data) {
       return NextResponse.json(
@@ -14,29 +13,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure the public/jsons directory exists
-    const jsonsDir = join(process.cwd(), 'public', 'jsons');
-    if (!existsSync(jsonsDir)) {
-      await mkdir(jsonsDir, { recursive: true });
-    }
+    // Initialize database if needed
+    await initializeDatabase();
 
-    // Save the JSON file
-    const filePath = join(jsonsDir, fileName);
-    const jsonContent = JSON.stringify(data, null, 2);
-    
-    await writeFile(filePath, jsonContent, 'utf8');
+    // Create operations service instance
+    const operationsService = new OperationsService();
+
+    // Save the operation to database
+    const savedOperation = await operationsService.saveOperation({
+      fileName,
+      originalFileName,
+      fileSize,
+      data,
+      metadata: {
+        savedAt: new Date().toISOString(),
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      }
+    });
 
     return NextResponse.json({
       success: true,
-      fileName,
-      filePath: `/jsons/${fileName}`,
-      message: 'Operations saved successfully'
+      id: savedOperation.id,
+      fileName: savedOperation.file_name,
+      createdAt: savedOperation.created_at,
+      message: 'Operations saved successfully to database'
     });
 
   } catch (error) {
     console.error('Error saving operations:', error);
     return NextResponse.json(
-      { error: 'Failed to save operations' },
+      { error: 'Failed to save operations to database' },
       { status: 500 }
     );
   }
@@ -44,39 +50,44 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { fileName } = await request.json();
+    const { fileName, id } = await request.json();
 
-    if (!fileName) {
+    if (!fileName && !id) {
       return NextResponse.json(
-        { error: 'Missing fileName' },
+        { error: 'Missing fileName or id' },
         { status: 400 }
       );
     }
 
-    // Construct the file path
-    const filePath = join(process.cwd(), 'public', 'jsons', fileName);
+    // Create operations service instance
+    const operationsService = new OperationsService();
 
-    // Check if file exists
-    if (!existsSync(filePath)) {
+    let deleted = false;
+
+    // Delete by ID if provided, otherwise by fileName
+    if (id) {
+      deleted = await operationsService.deleteOperationById(parseInt(id));
+    } else if (fileName) {
+      deleted = await operationsService.deleteOperationByFileName(fileName);
+    }
+
+    if (!deleted) {
       return NextResponse.json(
-        { error: 'File not found' },
+        { error: 'Operation not found' },
         { status: 404 }
       );
     }
 
-    // Delete the file
-    await unlink(filePath);
-
     return NextResponse.json({
       success: true,
-      fileName,
-      message: 'File deleted successfully'
+      fileName: fileName || `ID: ${id}`,
+      message: 'Operation deleted successfully from database'
     });
 
   } catch (error) {
-    console.error('Error deleting file:', error);
+    console.error('Error deleting operation:', error);
     return NextResponse.json(
-      { error: 'Failed to delete file' },
+      { error: 'Failed to delete operation from database' },
       { status: 500 }
     );
   }

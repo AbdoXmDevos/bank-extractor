@@ -1,93 +1,99 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readdir, readFile, stat } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { OperationsService } from '@/lib/operationsService';
+import { initializeDatabase } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const fileName = searchParams.get('fileName');
+    const id = searchParams.get('id');
+    const search = searchParams.get('search');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    const jsonsDir = join(process.cwd(), 'public', 'jsons');
+    // Initialize database if needed
+    await initializeDatabase();
 
-    // If fileName is provided, load specific file
-    if (fileName) {
-      const filePath = join(jsonsDir, fileName);
-      
-      if (!existsSync(filePath)) {
+    // Create operations service instance
+    const operationsService = new OperationsService();
+
+    // If ID is provided, load specific operation by ID
+    if (id) {
+      const operation = await operationsService.getOperationById(parseInt(id));
+
+      if (!operation) {
         return NextResponse.json(
-          { error: 'File not found' },
+          { error: 'Operation not found' },
           { status: 404 }
         );
       }
 
-      const fileContent = await readFile(filePath, 'utf8');
-      const data = JSON.parse(fileContent);
-
       return NextResponse.json({
         success: true,
-        fileName,
-        data
+        id: operation.id,
+        fileName: operation.file_name,
+        originalFileName: operation.original_file_name,
+        createdAt: operation.created_at,
+        updatedAt: operation.updated_at,
+        fileSize: operation.file_size,
+        data: operation.data,
+        metadata: operation.metadata
       });
     }
 
-    // Otherwise, list all available files
-    if (!existsSync(jsonsDir)) {
+    // If fileName is provided, load specific operation by fileName
+    if (fileName) {
+      const operation = await operationsService.getOperationByFileName(fileName);
+
+      if (!operation) {
+        return NextResponse.json(
+          { error: 'Operation not found' },
+          { status: 404 }
+        );
+      }
+
       return NextResponse.json({
         success: true,
-        files: []
+        id: operation.id,
+        fileName: operation.file_name,
+        originalFileName: operation.original_file_name,
+        createdAt: operation.created_at,
+        updatedAt: operation.updated_at,
+        fileSize: operation.file_size,
+        data: operation.data,
+        metadata: operation.metadata
       });
     }
 
-    const files = await readdir(jsonsDir);
-    const jsonFiles = files.filter(file => file.endsWith('.json'));
+    // If search term is provided, search operations
+    if (search) {
+      const operations = await operationsService.searchOperations(search, limit);
 
-    // Get file stats for each JSON file
-    const fileDetails = await Promise.all(
-      jsonFiles.map(async (file) => {
-        const filePath = join(jsonsDir, file);
-        const stats = await stat(filePath);
-        
-        try {
-          // Try to read metadata from the file
-          const content = await readFile(filePath, 'utf8');
-          const data = JSON.parse(content);
-          
-          return {
-            fileName: file,
-            size: stats.size,
-            createdAt: stats.birthtime.toISOString(),
-            modifiedAt: stats.mtime.toISOString(),
-            metadata: data.metadata || null,
-            operationsCount: data.operations?.length || 0
-          };
-        } catch (error) {
-          // If file is corrupted or not valid JSON, still include it
-          return {
-            fileName: file,
-            size: stats.size,
-            createdAt: stats.birthtime.toISOString(),
-            modifiedAt: stats.mtime.toISOString(),
-            metadata: null,
-            operationsCount: 0,
-            error: 'Invalid JSON file'
-          };
-        }
-      })
-    );
+      return NextResponse.json({
+        success: true,
+        operations,
+        total: operations.length,
+        search: search
+      });
+    }
 
-    // Sort by creation date (newest first)
-    fileDetails.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Otherwise, list all operations with pagination
+    const operations = await operationsService.listOperations(limit, offset);
+    const totalCount = await operationsService.getOperationsCount();
 
     return NextResponse.json({
       success: true,
-      files: fileDetails
+      operations,
+      total: totalCount,
+      limit,
+      offset,
+      hasMore: offset + limit < totalCount
     });
 
   } catch (error) {
     console.error('Error loading operations:', error);
     return NextResponse.json(
-      { error: 'Failed to load operations' },
+      { error: 'Failed to load operations from database' },
       { status: 500 }
     );
   }

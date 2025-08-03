@@ -6,9 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "db:migrate-files": "tsx src/scripts/migrate-json-files.ts",
+    "db:test": "curl http://localhost:3000/api/test-db"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "@types/pdf-parse": "^1.1.5",
     "lucide-react": "^0.535.0",
     "next": "15.4.5",
@@ -24,9 +28,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }
