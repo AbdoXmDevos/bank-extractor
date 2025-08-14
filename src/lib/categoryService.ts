@@ -45,7 +45,7 @@ export class CategoryService {
         SELECT id, name, keywords, color, description, applicable_for, is_default
         FROM categories
         ORDER BY name
-      `;
+      ` as any[];
 
       // Only update categories if we got results from database
       if (result.length > 0) {
@@ -55,7 +55,9 @@ export class CategoryService {
           keywords: row.keywords || [],
           color: row.color,
           description: row.description || undefined,
-          applicableFor: row.applicable_for || undefined
+          applicableFor: (row.applicable_for as string[] | null)?.filter(type => 
+            type === 'DEBIT' || type === 'CREDIT'
+          ) as ('DEBIT' | 'CREDIT')[] | undefined
         }));
         console.log(`Loaded ${this.categories.length} categories from database`);
         console.log('Category IDs in cache:', this.categories.map(cat => `${cat.id}: ${cat.name}`));

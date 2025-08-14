@@ -27,7 +27,7 @@ export default function TransactionTable({ transactions, onFilterChange }: Trans
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   
   const categoryService = CategoryService.getInstance();
-  const categories = categoryService.getCategories();
+  const categories = categoryService.getCachedCategories();
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
@@ -82,8 +82,8 @@ export default function TransactionTable({ transactions, onFilterChange }: Trans
           bValue = b.operation.toLowerCase();
           break;
         case 'category':
-          aValue = categoryService.getCategoryName(a.category).toLowerCase();
-          bValue = categoryService.getCategoryName(b.category).toLowerCase();
+          aValue = categoryService.getCategoryNameSync(a.category).toLowerCase();
+          bValue = categoryService.getCategoryNameSync(b.category).toLowerCase();
           break;
         default:
           return 0;

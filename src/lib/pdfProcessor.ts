@@ -254,7 +254,7 @@ export class PDFProcessor {
       const type = this.determineTransactionType(line);
 
       // Classify the transaction
-      const category = this.categoryService.classifyTransaction(operation, type);
+      const category = this.categoryService.classifyTransactionSync(operation, type);
 
       const transaction = {
         id: this.generateTransactionId(date, operation, amount),
@@ -312,7 +312,7 @@ export class PDFProcessor {
       const type = this.determineTransactionType(line);
 
       // Classify the transaction
-      const category = this.categoryService.classifyTransaction(operation, type);
+      const category = this.categoryService.classifyTransactionSync(operation, type);
 
       const transaction = {
         id: this.generateTransactionId(date, operation, amount),
@@ -407,7 +407,7 @@ export class PDFProcessor {
       }
 
       // Classify the transaction
-      const category = this.categoryService.classifyTransaction(operation);
+      const category = this.categoryService.classifyTransactionSync(operation);
 
       return {
         id: this.generateTransactionId(date, operation, amount),

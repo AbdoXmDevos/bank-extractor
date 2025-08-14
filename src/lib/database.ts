@@ -26,7 +26,7 @@ export function sql(strings: TemplateStringsArray, ...values: any[]) {
 // Test the database connection
 export async function testConnection() {
   try {
-    const result = await sql`SELECT NOW() as current_time`;
+    const result = await sql`SELECT NOW() as current_time` as any[];
     console.log('Database connected successfully:', result[0].current_time);
     return true;
   } catch (error) {

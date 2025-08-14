@@ -34,8 +34,8 @@ export class TransactionClassifier {
   /**
    * Re-classify transactions with updated category rules
    */
-  public reclassifyTransactions(transactions: Transaction[]): Transaction[] {
-    return this.classifyTransactions(transactions);
+  public async reclassifyTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+    return await this.classifyTransactions(transactions);
   }
 
   /**
@@ -164,8 +164,8 @@ export class TransactionClassifier {
   /**
    * Get category distribution for visualization
    */
-  public getCategoryDistribution(transactions: Transaction[]): { name: string; value: number; color: string }[] {
-    const stats = this.getCategoryStats(transactions);
+  public async getCategoryDistribution(transactions: Transaction[]): Promise<{ name: string; value: number; color: string }[]> {
+    const stats = await this.getCategoryStats(transactions);
     return stats.map(stat => ({
       name: stat.category,
       value: stat.totalAmount,

@@ -52,7 +52,7 @@ export class OperationsService {
         RETURNING *
       `;
 
-      return result[0] as OperationRecord;
+      return (result as any[])[0] as OperationRecord;
     } catch (error) {
       console.error('Error saving operation:', error);
       throw new Error('Failed to save operation to database');
@@ -71,7 +71,7 @@ export class OperationsService {
         LIMIT 1
       `;
 
-      return result.length > 0 ? (result[0] as OperationRecord) : null;
+      return (result as any[]).length > 0 ? ((result as any[])[0] as OperationRecord) : null;
     } catch (error) {
       console.error('Error getting operation by file name:', error);
       throw new Error('Failed to retrieve operation from database');
@@ -88,7 +88,7 @@ export class OperationsService {
         WHERE id = ${id}
       `;
 
-      return result.length > 0 ? (result[0] as OperationRecord) : null;
+      return (result as any[]).length > 0 ? ((result as any[])[0] as OperationRecord) : null;
     } catch (error) {
       console.error('Error getting operation by ID:', error);
       throw new Error('Failed to retrieve operation from database');
@@ -120,7 +120,7 @@ export class OperationsService {
         OFFSET ${offset}
       `;
 
-      return result as OperationSummary[];
+      return (result as any[]) as OperationSummary[];
     } catch (error) {
       console.error('Error listing operations:', error);
       // Return empty array instead of throwing to allow the app to continue working
@@ -139,7 +139,7 @@ export class OperationsService {
         RETURNING id
       `;
 
-      return result.length > 0;
+      return (result as any[]).length > 0;
     } catch (error) {
       console.error('Error deleting operation:', error);
       throw new Error('Failed to delete operation from database');
@@ -157,7 +157,7 @@ export class OperationsService {
         RETURNING id
       `;
 
-      return result.length > 0;
+      return (result as any[]).length > 0;
     } catch (error) {
       console.error('Error deleting operation by ID:', error);
       throw new Error('Failed to delete operation from database');
@@ -208,7 +208,7 @@ export class OperationsService {
         SELECT COUNT(*) as total FROM operations
       `;
 
-      return parseInt(result[0].total);
+      return parseInt((result as any[])[0].total);
     } catch (error) {
       console.error('Error getting operations count:', error);
       // Return 0 instead of throwing to allow the app to continue working
@@ -231,7 +231,7 @@ export class OperationsService {
         RETURNING *
       `;
 
-      return result.length > 0 ? (result[0] as OperationRecord) : null;
+      return (result as any[]).length > 0 ? ((result as any[])[0] as OperationRecord) : null;
     } catch (error) {
       console.error('Error updating operation:', error);
       throw new Error('Failed to update operation in database');
