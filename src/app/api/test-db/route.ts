@@ -5,14 +5,26 @@ import { OperationsService } from '@/lib/operationsService';
 export async function GET() {
   try {
     console.log('Testing database connection...');
-    
+
+    // Check if DATABASE_URL is available first
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({
+        success: false,
+        error: 'DATABASE_URL environment variable is not set',
+        operationsCount: 0,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Test basic connection
     const connectionTest = await testConnection();
     if (!connectionTest) {
       return NextResponse.json({
         success: false,
-        error: 'Database connection failed'
-      }, { status: 500 });
+        error: 'Database connection failed',
+        operationsCount: 0,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // Initialize database
@@ -20,8 +32,10 @@ export async function GET() {
     if (!initResult) {
       return NextResponse.json({
         success: false,
-        error: 'Database initialization failed'
-      }, { status: 500 });
+        error: 'Database initialization failed',
+        operationsCount: 0,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // Test operations service
@@ -40,8 +54,9 @@ export async function GET() {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
+      operationsCount: 0,
       timestamp: new Date().toISOString()
-    }, { status: 500 });
+    });
   }
 }
 

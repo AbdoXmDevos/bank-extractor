@@ -10,15 +10,16 @@ interface OperationData {
   date: string;
   operation: string;
   status: 'Incoming' | 'Outgoing';
+  amount: number; // Add amount field
   category?: string; // Unified category ID
 }
 
 // Category display information using unified system
-const getCategoryInfo = (operation: OperationData) => {
+const getCategoryInfo = async (operation: OperationData) => {
   if (!operation.category) return null;
 
   const categoryService = CategoryService.getInstance();
-  const category = categoryService.getCategoryById(operation.category);
+  const category = await categoryService.getCategoryById(operation.category);
 
   if (!category) return null;
 
@@ -55,6 +56,55 @@ interface FilterState {
 }
 
 type GroupByOption = 'none' | 'status' | 'category' | 'date';
+
+// Component to handle async category loading
+const CategoryDisplay = ({ categoryId }: { categoryId?: string }) => {
+  const [categoryInfo, setCategoryInfo] = useState<{ name: string; color: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCategory = async () => {
+      if (!categoryId) {
+        setCategoryInfo(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const info = await getCategoryInfo({ category: categoryId } as OperationData);
+        setCategoryInfo(info);
+      } catch (error) {
+        console.error('Failed to load category:', error);
+        setCategoryInfo(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategory();
+  }, [categoryId]);
+
+  if (loading) {
+    return <span className="text-gray-400">Loading...</span>;
+  }
+
+  if (!categoryInfo) {
+    return <span className="text-gray-400">-</span>;
+  }
+
+  return (
+    <span
+      className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+      style={{
+        backgroundColor: categoryInfo.color,
+        color: getTextColor(categoryInfo.color)
+      }}
+    >
+      {categoryInfo.name}
+    </span>
+  );
+};
 
 export default function ExtractOperationsPage() {
   const [operations, setOperations] = useState<OperationData[]>([]);
@@ -158,16 +208,16 @@ export default function ExtractOperationsPage() {
     maxSize: 10 * 1024 * 1024, // 10MB
   });
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (filteredOperations.length === 0) return;
 
     const csvContent = [
-      'Date,Operation,Status,Category',
-      ...filteredOperations.map(op => {
-        const categoryInfo = getCategoryInfo(op);
+      'Date,Operation,Amount,Status,Category',
+      ...await Promise.all(filteredOperations.map(async op => {
+        const categoryInfo = await getCategoryInfo(op);
         const categoryName = categoryInfo ? categoryInfo.name : '';
-        return `"${op.date}","${op.operation}","${op.status}","${categoryName}"`;
-      })
+        return `"${op.date}","${op.operation}","${op.amount || 0}","${op.status}","${categoryName}"`;
+      }))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -189,10 +239,10 @@ export default function ExtractOperationsPage() {
     try {
       // Prepare the data to save
       const dashboardData = {
-        operations: filteredOperations.map(op => ({
+        operations: await Promise.all(filteredOperations.map(async op => ({
           ...op,
-          categoryInfo: getCategoryInfo(op)
-        })),
+          categoryInfo: await getCategoryInfo(op)
+        }))),
         metadata: {
           fileName,
           totalOperations: operations.length,
@@ -305,38 +355,45 @@ export default function ExtractOperationsPage() {
   }, [operations, filters]);
 
   // Grouping logic
-  const groupedOperations = useMemo(() => {
-    if (groupBy === 'none') {
-      return { 'All Operations': filteredOperations };
-    }
+  const [groupedOperations, setGroupedOperations] = useState<{ [key: string]: OperationData[] }>({ 'All Operations': [] });
 
-    const groups: { [key: string]: OperationData[] } = {};
-
-    filteredOperations.forEach(operation => {
-      let groupKey: string;
-
-      switch (groupBy) {
-        case 'status':
-          groupKey = operation.status;
-          break;
-        case 'category':
-          const categoryInfo = getCategoryInfo(operation);
-          groupKey = categoryInfo ? categoryInfo.name : 'Uncategorized';
-          break;
-        case 'date':
-          groupKey = operation.date;
-          break;
-        default:
-          groupKey = 'All Operations';
+  useEffect(() => {
+    const groupOperations = async () => {
+      if (groupBy === 'none') {
+        setGroupedOperations({ 'All Operations': filteredOperations });
+        return;
       }
 
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push(operation);
-    });
+      const groups: { [key: string]: OperationData[] } = {};
 
-    return groups;
+      for (const operation of filteredOperations) {
+        let groupKey: string;
+
+        switch (groupBy) {
+          case 'status':
+            groupKey = operation.status;
+            break;
+          case 'category':
+            const categoryInfo = await getCategoryInfo(operation);
+            groupKey = categoryInfo ? categoryInfo.name : 'Uncategorized';
+            break;
+          case 'date':
+            groupKey = operation.date;
+            break;
+          default:
+            groupKey = 'All Operations';
+        }
+
+        if (!groups[groupKey]) {
+          groups[groupKey] = [];
+        }
+        groups[groupKey].push(operation);
+      }
+
+      setGroupedOperations(groups);
+    };
+
+    groupOperations();
   }, [filteredOperations, groupBy]);
 
   // Auto-expand groups when grouping changes
@@ -360,7 +417,8 @@ export default function ExtractOperationsPage() {
   // Get all available categories for filter dropdown
   const getAllCategories = () => {
     const categoryService = CategoryService.getInstance();
-    const allCategories = categoryService.getCategories();
+    // Use the cached categories (sync version)
+    const allCategories = categoryService.getCachedCategories();
 
     return allCategories.map(category => {
       const applicableFor = category.applicableFor || ['DEBIT', 'CREDIT'];
@@ -656,6 +714,9 @@ export default function ExtractOperationsPage() {
                               Operation Reference
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Amount
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Status
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -666,7 +727,6 @@ export default function ExtractOperationsPage() {
                       )}
                       <tbody className="bg-white divide-y divide-gray-200">
                         {groupOperations.map((operation, index) => {
-                          const categoryInfo = getCategoryInfo(operation);
                           const globalIndex = operations.findIndex(op => op.id === operation.id) + 1;
                           return (
                             <tr key={operation.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -679,6 +739,9 @@ export default function ExtractOperationsPage() {
                               <td className="px-6 py-4 text-sm text-gray-900">
                                 {operation.operation}
                               </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {operation.amount?.toLocaleString() || '0'} DHS
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   operation.status === 'Incoming'
@@ -689,19 +752,7 @@ export default function ExtractOperationsPage() {
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {categoryInfo ? (
-                                  <span
-                                    className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                    style={{
-                                      backgroundColor: categoryInfo.color,
-                                      color: getTextColor(categoryInfo.color)
-                                    }}
-                                  >
-                                    {categoryInfo.name}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
+                                <CategoryDisplay categoryId={operation.category} />
                               </td>
                             </tr>
                           );
@@ -903,51 +954,113 @@ export default function ExtractOperationsPage() {
             </div>
 
             {/* Dashboard Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <div className="flex items-center">
-                  <FileText className="w-8 h-8 text-blue-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-blue-600">Total Operations</p>
-                    <p className="text-2xl font-bold text-blue-900">
-                      {filteredOperations.length}
-                    </p>
+            <div className="space-y-6 mb-8">
+              {/* First Row - Operation Counts */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-blue-50 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <FileText className="w-8 h-8 text-blue-600" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-blue-600">Total Operations</p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        {filteredOperations.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <BarChart3 className="w-8 h-8 text-green-600" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-600">Incoming</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {filteredOperations.filter(op => op.status === 'Incoming').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <Download className="w-8 h-8 text-red-600" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-red-600">Outgoing</p>
+                      <p className="text-2xl font-bold text-red-900">
+                        {filteredOperations.filter(op => op.status === 'Outgoing').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <FileText className="w-8 h-8 text-purple-600" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-purple-600">File</p>
+                      <p className="text-sm font-bold text-purple-900 truncate">
+                        {fileName}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-green-50 p-6 rounded-lg">
-                <div className="flex items-center">
-                  <BarChart3 className="w-8 h-8 text-green-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-600">Incoming</p>
-                    <p className="text-2xl font-bold text-green-900">
-                      {filteredOperations.filter(op => op.status === 'Incoming').length}
-                    </p>
+              {/* Second Row - Amounts */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-green-100 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <BarChart3 className="w-8 h-8 text-green-700" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-700">Total Received</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {filteredOperations
+                          .filter(op => op.status === 'Incoming')
+                          .reduce((sum, op) => sum + (op.amount || 0), 0)
+                          .toLocaleString()} DHS
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-red-50 p-6 rounded-lg">
-                <div className="flex items-center">
-                  <Download className="w-8 h-8 text-red-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-red-600">Outgoing</p>
-                    <p className="text-2xl font-bold text-red-900">
-                      {filteredOperations.filter(op => op.status === 'Outgoing').length}
-                    </p>
+                <div className="bg-red-100 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <Download className="w-8 h-8 text-red-700" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-red-700">Total Spent</p>
+                      <p className="text-2xl font-bold text-red-900">
+                        {filteredOperations
+                          .filter(op => op.status === 'Outgoing')
+                          .reduce((sum, op) => sum + (op.amount || 0), 0)
+                          .toLocaleString()} DHS
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-purple-50 p-6 rounded-lg">
-                <div className="flex items-center">
-                  <FileText className="w-8 h-8 text-purple-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-purple-600">File</p>
-                    <p className="text-sm font-bold text-purple-900 truncate">
-                      {fileName}
-                    </p>
+                <div className="bg-blue-100 p-6 rounded-lg">
+                  <div className="flex items-center">
+                    <BarChart3 className="w-8 h-8 text-blue-700" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-blue-700">Net Flow</p>
+                      <p className={`text-2xl font-bold ${
+                        (filteredOperations
+                          .filter(op => op.status === 'Incoming')
+                          .reduce((sum, op) => sum + (op.amount || 0), 0) -
+                        filteredOperations
+                          .filter(op => op.status === 'Outgoing')
+                          .reduce((sum, op) => sum + (op.amount || 0), 0)) >= 0 
+                          ? 'text-green-900' : 'text-red-900'
+                      }`}>
+                        {(filteredOperations
+                          .filter(op => op.status === 'Incoming')
+                          .reduce((sum, op) => sum + (op.amount || 0), 0) -
+                        filteredOperations
+                          .filter(op => op.status === 'Outgoing')
+                          .reduce((sum, op) => sum + (op.amount || 0), 0))
+                          .toLocaleString()} DHS
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -993,6 +1106,9 @@ export default function ExtractOperationsPage() {
                         Operation
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1002,7 +1118,6 @@ export default function ExtractOperationsPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredOperations.slice(0, 20).map((operation, index) => {
-                      const categoryInfo = getCategoryInfo(operation);
                       return (
                         <tr key={operation.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -1010,6 +1125,9 @@ export default function ExtractOperationsPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {operation.operation}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {operation.amount?.toLocaleString() || '0'} DHS
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -1021,19 +1139,7 @@ export default function ExtractOperationsPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {categoryInfo ? (
-                              <span
-                                className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                style={{
-                                  backgroundColor: categoryInfo.color,
-                                  color: getTextColor(categoryInfo.color)
-                                }}
-                              >
-                                {categoryInfo.name}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
+                            <CategoryDisplay categoryId={operation.category} />
                           </td>
                         </tr>
                       );

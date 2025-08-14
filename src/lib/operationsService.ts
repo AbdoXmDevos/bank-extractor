@@ -100,15 +100,21 @@ export class OperationsService {
    */
   async listOperations(limit: number = 50, offset: number = 0): Promise<OperationSummary[]> {
     try {
+      // Check if DATABASE_URL is available
+      if (!process.env.DATABASE_URL) {
+        console.warn('DATABASE_URL not available, returning empty operations list');
+        return [];
+      }
+
       const result = await sql`
-        SELECT 
+        SELECT
           id,
           file_name,
           original_file_name,
           created_at,
           file_size,
-          jsonb_array_length(data->'transactions') as transaction_count
-        FROM operations 
+          jsonb_array_length(data->'operations') as transaction_count
+        FROM operations
         ORDER BY created_at DESC
         LIMIT ${limit}
         OFFSET ${offset}
@@ -117,7 +123,8 @@ export class OperationsService {
       return result as OperationSummary[];
     } catch (error) {
       console.error('Error listing operations:', error);
-      throw new Error('Failed to list operations from database');
+      // Return empty array instead of throwing to allow the app to continue working
+      return [];
     }
   }
 
@@ -163,15 +170,15 @@ export class OperationsService {
   async searchOperations(searchTerm: string, limit: number = 20): Promise<OperationSummary[]> {
     try {
       const result = await sql`
-        SELECT 
+        SELECT
           id,
           file_name,
           original_file_name,
           created_at,
           file_size,
-          jsonb_array_length(data->'transactions') as transaction_count
-        FROM operations 
-        WHERE 
+          jsonb_array_length(data->'operations') as transaction_count
+        FROM operations
+        WHERE
           original_file_name ILIKE ${`%${searchTerm}%`}
           OR file_name ILIKE ${`%${searchTerm}%`}
           OR data::text ILIKE ${`%${searchTerm}%`}
@@ -191,6 +198,12 @@ export class OperationsService {
    */
   async getOperationsCount(): Promise<number> {
     try {
+      // Check if DATABASE_URL is available
+      if (!process.env.DATABASE_URL) {
+        console.warn('DATABASE_URL not available, returning 0 for operations count');
+        return 0;
+      }
+
       const result = await sql`
         SELECT COUNT(*) as total FROM operations
       `;
@@ -198,7 +211,8 @@ export class OperationsService {
       return parseInt(result[0].total);
     } catch (error) {
       console.error('Error getting operations count:', error);
-      throw new Error('Failed to get operations count from database');
+      // Return 0 instead of throwing to allow the app to continue working
+      return 0;
     }
   }
 

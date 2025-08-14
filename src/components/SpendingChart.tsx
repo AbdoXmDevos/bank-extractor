@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Transaction } from '@/types/transaction';
+import { Transaction, CategoryStats } from '@/types/transaction';
 import { TransactionClassifier } from '@/lib/transactionClassifier';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 
@@ -12,17 +12,43 @@ interface SpendingChartProps {
   showCredits?: boolean;
 }
 
-export default function SpendingChart({ 
-  transactions, 
-  chartType = 'pie', 
-  showCredits = false 
+export default function SpendingChart({
+  transactions,
+  chartType = 'pie',
+  showCredits = false
 }: SpendingChartProps) {
+  const [data, setData] = useState<CategoryStats[]>([]);
+  const [loading, setLoading] = useState(true);
   const classifier = new TransactionClassifier();
-  
-  // Get spending or income breakdown based on showCredits
-  const data = showCredits 
-    ? classifier.getIncomeBreakdown(transactions)
-    : classifier.getSpendingBreakdown(transactions);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Get spending or income breakdown based on showCredits
+        const result = showCredits
+          ? await classifier.getIncomeBreakdown(transactions)
+          : await classifier.getSpendingBreakdown(transactions);
+        setData(result);
+      } catch (error) {
+        console.error('Failed to load chart data:', error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [transactions, showCredits]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <p className="mt-2">Loading chart data...</p>
+      </div>
+    );
+  }
 
   if (data.length === 0) {
     return (

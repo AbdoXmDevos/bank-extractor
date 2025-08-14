@@ -6,6 +6,7 @@ interface OperationData {
   date: string;
   operation: string;
   status: 'Incoming' | 'Outgoing';
+  amount: number; // Add amount field
   category?: string; // Unified category ID
 }
 
@@ -121,6 +122,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function isDateLine(line: string): boolean {
+  return /^(\d{2}\/\d{2})\/?\d{0,4}/.test(line.trim());
+}
+
 function extractOperationsFromText(text: string): OperationData[] {
   const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   const operations: OperationData[] = [];
@@ -159,37 +164,58 @@ function extractOperationsFromText(text: string): OperationData[] {
       if (hasOperationStarter) {
         console.log(`Line contains operation starter: "${line}"`);
 
-        // Extract the operation text from this line
-        const operation = extractOperationFromLine(line, date, operationStarters);
+        // Extract the operation text and amount from this line
+        const extractionResult = extractOperationAndAmountFromLine(line, date, operationStarters);
 
-        if (operation && operation.length > 5) {
+        if (extractionResult && extractionResult.operation && extractionResult.operation.length > 5) {
+          // Build extended classification text by appending continuation lines (merchant, details)
+          let extendedText = extractionResult.operation;
+          const nextLine = lines[i + 1];
+          if (nextLine && !isHeaderLine(nextLine) && !isDateLine(nextLine)) {
+            // Append next line details
+            extendedText = `${extendedText} ${nextLine}`.trim();
+            const thirdLine = lines[i + 2];
+            // Optionally append a third line if still not a date/header and short
+            if (thirdLine && !isHeaderLine(thirdLine) && !isDateLine(thirdLine) && thirdLine.length < 60) {
+              extendedText = `${extendedText} ${thirdLine}`.trim();
+            }
+          }
+
           // Determine status based on operation type
-          const status = determineOperationStatus(operation);
+          const status = determineOperationStatus(extractionResult.operation);
 
-          // Classify operations using unified category system
+          // Classify operations using unified category system with extended text
           const categoryService = CategoryService.getInstance();
           const transactionType = status === 'Outgoing' ? 'DEBIT' : 'CREDIT';
-          const category = categoryService.classifyTransaction(operation, transactionType);
+          const category = categoryService.classifyTransactionSync(extendedText, transactionType);
+
+          // Prefer to display extendedText so users see merchant names
+          const displayOperation = extendedText;
 
           operations.push({
             id: operationId++,
             date,
-            operation: operation.trim(),
+            operation: displayOperation.trim(),
             status,
+            amount: extractionResult.amount, // Include amount
             category
           });
 
-          console.log(`Extracted operation ${operationId - 1}: "${operation}" - Status: ${status} - Category: ${category}`);
+          console.log(`Extracted operation ${operationId - 1}: "${displayOperation}" - Amount: ${extractionResult.amount} - Status: ${status} - Category: ${category}`);
         }
       }
     }
   }
 
   console.log(`Total operations extracted: ${operations.length}`);
+  console.log('Final operations with amounts:');
+  operations.forEach((op, index) => {
+    console.log(`  ${index + 1}: ${op.operation} - Amount: ${op.amount}`);
+  });
   return operations;
 }
 
-function extractOperationFromLine(line: string, _date: string, operationStarters: string[]): string {
+function extractOperationAndAmountFromLine(line: string, _date: string, operationStarters: string[]): { operation: string; amount: number } | null {
   console.log(`Extracting from line: "${line}"`);
 
   // Find which operation starter this line contains
@@ -208,7 +234,7 @@ function extractOperationFromLine(line: string, _date: string, operationStarters
 
   if (operationStart === -1) {
     console.log('No operation starter found');
-    return '';
+    return null;
   }
 
   console.log(`Found starter "${starterFound}" at position ${operationStart}`);
@@ -217,15 +243,89 @@ function extractOperationFromLine(line: string, _date: string, operationStarters
   let operationText = line.substring(operationStart);
   console.log(`Operation text from starter: "${operationText}"`);
 
-  // Find the last amount in the line (ends with ,XX or .XX)
-  const amountPattern = /\d{1,3}(?:[,\s]\d{3})*[,\.]\d{2}$/;
-  const amountMatch = operationText.match(amountPattern);
-
+  // Try multiple amount patterns to find the amount
+  let amount = 0;
+  let amountStr = '';
+  
+  // Pattern 1: Amount at the end with decimal (e.g., "1,234.56", "1 234,56")
+  const amountPattern1 = /\d{1,3}(?:[,\s]\d{3})*[,\.]\d{2}$/;
+  let amountMatch = operationText.match(amountPattern1);
+  
   if (amountMatch) {
-    // Remove the amount from the end
-    const amountIndex = operationText.lastIndexOf(amountMatch[0]);
+    amountStr = amountMatch[0];
+    amount = parseAmount(amountStr);
+    console.log(`Pattern 1 matched: "${amountStr}" -> ${amount}`);
+  } else {
+    // Pattern 2: Amount with decimal but no thousands separator (e.g., "1234.56", "1234,56")
+    const amountPattern2 = /\d+[,\.]\d{2}$/;
+    amountMatch = operationText.match(amountPattern2);
+    
+    if (amountMatch) {
+      amountStr = amountMatch[0];
+      amount = parseAmount(amountStr);
+      console.log(`Pattern 2 matched: "${amountStr}" -> ${amount}`);
+    } else {
+      // Pattern 3: Look for any amount in the line (more flexible)
+      const amountPattern3 = /\d{1,3}(?:[,\s]\d{3})*[,\.]\d{2}/g;
+      const allMatches = operationText.match(amountPattern3);
+      
+      if (allMatches && allMatches.length > 0) {
+        // Take the last match (usually the final amount)
+        amountStr = allMatches[allMatches.length - 1];
+        amount = parseAmount(amountStr);
+        console.log(`Pattern 3 matched: "${amountStr}" -> ${amount}`);
+      } else {
+        // Pattern 4: Look for any number that might be an amount
+        const amountPattern4 = /\d+[,\.]\d{2}/g;
+        const allMatches2 = operationText.match(amountPattern4);
+        
+        if (allMatches2 && allMatches2.length > 0) {
+          amountStr = allMatches2[allMatches2.length - 1];
+          amount = parseAmount(amountStr);
+          console.log(`Pattern 4 matched: "${amountStr}" -> ${amount}`);
+        } else {
+          // Pattern 5: Look for numbers that might be amounts without decimal (e.g., "1234")
+          const amountPattern5 = /\b\d{3,}(?:[,\s]\d{3})*\b/g;
+          const allMatches3 = operationText.match(amountPattern5);
+          
+          if (allMatches3 && allMatches3.length > 0) {
+            // Take the largest number as it's likely the amount
+            const numbers = allMatches3.map(match => parseFloat(match.replace(/[,\s]/g, '')));
+            const maxNumber = Math.max(...numbers);
+            if (maxNumber > 10) { // Only consider reasonable amounts
+              amountStr = allMatches3[numbers.indexOf(maxNumber)];
+              amount = maxNumber;
+              console.log(`Pattern 5 matched: "${amountStr}" -> ${amount}`);
+            }
+          } else {
+            // Pattern 6: Look for any sequence of digits that might be an amount
+            const amountPattern6 = /\b\d{2,}\b/g;
+            const allMatches4 = operationText.match(amountPattern6);
+            
+            if (allMatches4 && allMatches4.length > 0) {
+              // Take the largest number as it's likely the amount
+              const numbers = allMatches4.map(match => parseFloat(match));
+              const maxNumber = Math.max(...numbers);
+              if (maxNumber > 10) { // Only consider reasonable amounts
+                amountStr = allMatches4[numbers.indexOf(maxNumber)];
+                amount = maxNumber;
+                console.log(`Pattern 6 matched: "${amountStr}" -> ${amount}`);
+              }
+            } else {
+              console.log('No amount pattern matched in:', operationText);
+              console.log('Available numbers in text:', operationText.match(/\d+/g));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (amountStr) {
+    // Remove the amount from the operation text
+    const amountIndex = operationText.lastIndexOf(amountStr);
     operationText = operationText.substring(0, amountIndex).trim();
-    console.log(`After removing amount "${amountMatch[0]}": "${operationText}"`);
+    console.log(`After removing amount: "${operationText}"`);
   }
 
   // Clean up the operation text
@@ -234,7 +334,35 @@ function extractOperationFromLine(line: string, _date: string, operationStarters
     .trim();
 
   console.log(`Final operation text: "${operationText}"`);
-  return operationText;
+  console.log(`Final amount: ${amount}`);
+  return { operation: operationText, amount };
+}
+
+// Helper function to parse amount
+function parseAmount(amountStr: string): number {
+  console.log(`Parsing amount: "${amountStr}"`);
+  
+  // Handle different number formats: "1,234.56", "1 234,56", etc.
+  let normalized = amountStr
+    .replace(/\s/g, '') // Remove spaces
+    .replace(/,(\d{3})/g, '$1'); // Remove thousands separators
+  
+  // Handle decimal comma vs decimal dot
+  if (normalized.includes(',')) {
+    // If there's a comma, it might be a decimal separator
+    const parts = normalized.split(',');
+    if (parts.length === 2 && parts[1].length === 2) {
+      // Likely decimal comma format (e.g., "1234,56")
+      normalized = parts[0] + '.' + parts[1];
+    } else {
+      // Keep as is, might be thousands separator
+      normalized = normalized.replace(/,(\d{2})$/, '.$1');
+    }
+  }
+  
+  const result = parseFloat(normalized);
+  console.log(`Normalized: "${normalized}" -> ${result}`);
+  return result || 0;
 }
 
 function determineOperationStatus(operation: string): 'Incoming' | 'Outgoing' {
@@ -287,6 +415,16 @@ export async function GET() {
     success: true,
     message: 'Extract Operations API is working. Use POST to upload files.',
     timestamp: new Date().toISOString(),
-    methods: ['POST', 'OPTIONS']
+    methods: ['POST', 'OPTIONS'],
+    test: {
+      sampleLine: '15/12 PAIEMENT CARTE 1234 5678 9012 3456 1,234.56',
+      extractedAmount: parseAmount('1,234.56'),
+      patterns: [
+        'Pattern 1: /\\d{1,3}(?:[,\\s]\\d{3})*[,\\.]\\d{2}$/',
+        'Pattern 2: /\\d+[,\\.]\\d{2}$/',
+        'Pattern 3: /\\d{1,3}(?:[,\\s]\\d{3})*[,\\.]\\d{2}/g',
+        'Pattern 4: /\\d+[,\\.]\\d{2}/g'
+      ]
+    }
   });
 }

@@ -74,6 +74,126 @@ export default function ApiTestPage() {
     setIsLoading(false);
   };
 
+  const debugCategoryCache = async () => {
+    setIsLoading(true);
+    addResult('Debugging category cache...');
+    
+    try {
+      // Call the debug method on CategoryService
+      const response = await fetch('/api/test-db');
+      const result = await response.json();
+      addResult(`Database status: ${JSON.stringify(result)}`);
+      
+      // Also check the categories API
+      const catResponse = await fetch('/api/categories');
+      const catResult = await catResponse.json();
+      addResult(`Categories API: ${JSON.stringify(catResult)}`);
+      
+    } catch (error) {
+      addResult(`Debug error: ${error}`);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const testCategoryBadge = async () => {
+    setIsLoading(true);
+    addResult('Testing CategoryBadge component...');
+    
+    try {
+      // First, get all categories
+      const getResponse = await fetch('/api/categories');
+      const getData = await getResponse.json();
+      
+      if (getData.success && getData.data.length > 0) {
+        const firstCategory = getData.data[0];
+        addResult(`Testing with category: ${firstCategory.name} (ID: ${firstCategory.id})`);
+        
+        // Test the CategoryBadge component by creating a simple test
+        addResult('CategoryBadge should display: ' + firstCategory.name);
+        addResult('CategoryBadge categoryId: ' + firstCategory.id);
+        addResult('CategoryBadge category data: ' + JSON.stringify(firstCategory));
+      }
+    } catch (error) {
+      addResult(`CategoryBadge test error: ${error}`);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const testCategorySystem = async () => {
+    setIsLoading(true);
+    addResult('Testing category system...');
+    
+    try {
+      // Test 1: Get all categories
+      addResult('Test 1: Fetching all categories...');
+      const getResponse = await fetch('/api/categories');
+      const getData = await getResponse.json();
+      addResult(`Categories response: ${JSON.stringify(getData)}`);
+
+      if (getData.success) {
+        addResult(`Found ${getData.data.length} categories`);
+        
+        // Log all category IDs for debugging
+        addResult('Category IDs:');
+        getData.data.forEach((cat: any) => {
+          addResult(`  - ${cat.id}: ${cat.name}`);
+        });
+      }
+
+      // Test 2: Add a new test category
+      addResult('Test 2: Adding a new test category...');
+      const testCategory = {
+        name: 'Test Category',
+        keywords: ['TEST', 'DEBUG'],
+        color: '#FF0000',
+        description: 'A test category for debugging',
+        applicableFor: ['DEBIT', 'CREDIT']
+      };
+
+      const addResponse = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testCategory),
+      });
+
+      const addData = await addResponse.json();
+      addResult(`Add category response: ${JSON.stringify(addData)}`);
+
+      if (addData.success) {
+        addResult(`Successfully added category: ${addData.data.name} with ID: ${addData.data.id}`);
+        
+        // Test 3: Verify the category was added by fetching again
+        addResult('Test 3: Verifying category was added...');
+        const verifyResponse = await fetch('/api/categories');
+        const verifyData = await verifyResponse.json();
+        
+        if (verifyData.success) {
+          const newCategory = verifyData.data.find((cat: any) => cat.id === addData.data.id);
+          if (newCategory) {
+            addResult(`✅ Category verification successful: ${newCategory.name}`);
+          } else {
+            addResult(`❌ Category verification failed: category not found`);
+          }
+          
+          // Log all category IDs again to see the difference
+          addResult('Updated Category IDs:');
+          verifyData.data.forEach((cat: any) => {
+            addResult(`  - ${cat.id}: ${cat.name}`);
+          });
+        }
+      }
+
+    } catch (error) {
+      addResult(`Category test error: ${error}`);
+    }
+    
+    setIsLoading(false);
+  };
+
   const clearResults = () => {
     setTestResults([]);
   };
@@ -108,6 +228,27 @@ export default function ApiTestPage() {
               Test File Upload
             </button>
             <button
+              onClick={testCategorySystem}
+              disabled={isLoading}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              Test Category System
+            </button>
+            <button
+              onClick={testCategoryBadge}
+              disabled={isLoading}
+              className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 disabled:opacity-50"
+            >
+              Test CategoryBadge
+            </button>
+            <button
+              onClick={debugCategoryCache}
+              disabled={isLoading}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50"
+            >
+              Debug Cache
+            </button>
+            <button
               onClick={clearResults}
               disabled={isLoading}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
@@ -140,6 +281,7 @@ export default function ApiTestPage() {
             <li>First, test the health check to ensure the API is deployed and accessible</li>
             <li>Test the simple API to verify basic functionality</li>
             <li>Test the file upload with dummy data to see if the endpoint accepts POST requests</li>
+            <li>Test the category system to verify category creation and retrieval</li>
             <li>Check the browser console (F12) for additional debug information</li>
             <li>If any test fails, check the Network tab in developer tools for more details</li>
           </ol>

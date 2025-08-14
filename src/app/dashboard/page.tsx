@@ -59,6 +59,19 @@ export default function DashboardPage() {
     if (preloadedData) {
       try {
         const data = JSON.parse(preloadedData);
+        
+        // Ensure operations have amount fields
+        if (data.operations) {
+          data.operations = data.operations.map((op: any) => ({
+            ...op,
+            amount: op.amount || 0,
+            categoryInfo: op.categoryInfo || {
+              name: op.category || 'Unknown',
+              color: '#6B7280'
+            }
+          }));
+        }
+        
         const newFile: LoadedFile = {
           name: data.fileName || 'Loaded from History',
           data: data,
@@ -78,7 +91,20 @@ export default function DashboardPage() {
     if (bulkPreloadedData) {
       try {
         const bulkData = JSON.parse(bulkPreloadedData);
-        const newFiles: LoadedFile[] = bulkData.files;
+        const newFiles: LoadedFile[] = bulkData.files.map((file: any) => ({
+          ...file,
+          data: {
+            ...file.data,
+            operations: file.data.operations?.map((op: any) => ({
+              ...op,
+              amount: op.amount || 0,
+              categoryInfo: op.categoryInfo || {
+                name: op.category || 'Unknown',
+                color: '#6B7280'
+              }
+            })) || []
+          }
+        }));
 
         setLoadedFiles(newFiles);
         setSelectedFiles(newFiles.map(f => f.name));
@@ -97,6 +123,16 @@ export default function DashboardPage() {
     if (selectedFileData.length === 0) return null;
 
     let allOperations = selectedFileData.flatMap(f => f.data.operations);
+
+    // Convert operations to ensure they have amount fields
+    allOperations = allOperations.map(op => ({
+      ...op,
+      amount: op.amount || 0, // Ensure amount exists
+      categoryInfo: op.categoryInfo || {
+        name: op.category || 'Unknown',
+        color: '#6B7280'
+      }
+    }));
 
     // Apply filters
     if (statusFilter !== 'all') {

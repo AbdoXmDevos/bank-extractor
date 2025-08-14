@@ -43,43 +43,43 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
 
   const timeSeriesData = DashboardAnalytics.generateTimeSeriesData(filteredOperations);
   
-  // Calculate moving averages
+  // Calculate moving averages for amounts
   const dataWithMovingAverage = useMemo(() => {
     const windowSize = 7; // 7-day moving average
     return timeSeriesData.map((item, index) => {
       const start = Math.max(0, index - windowSize + 1);
       const window = timeSeriesData.slice(start, index + 1);
       
-      const avgIncoming = window.reduce((sum, d) => sum + d.incoming, 0) / window.length;
-      const avgOutgoing = window.reduce((sum, d) => sum + d.outgoing, 0) / window.length;
-      const avgNet = window.reduce((sum, d) => sum + d.net, 0) / window.length;
+      const avgIncomingAmount = window.reduce((sum, d) => sum + d.incomingAmount, 0) / window.length;
+      const avgOutgoingAmount = window.reduce((sum, d) => sum + d.outgoingAmount, 0) / window.length;
+      const avgNetAmount = window.reduce((sum, d) => sum + d.netAmount, 0) / window.length;
       
       return {
         ...item,
-        avgIncoming: Math.round(avgIncoming * 100) / 100,
-        avgOutgoing: Math.round(avgOutgoing * 100) / 100,
-        avgNet: Math.round(avgNet * 100) / 100
+        avgIncomingAmount: Math.round(avgIncomingAmount * 100) / 100,
+        avgOutgoingAmount: Math.round(avgOutgoingAmount * 100) / 100,
+        avgNetAmount: Math.round(avgNetAmount * 100) / 100
       };
     });
   }, [timeSeriesData]);
 
-  // Calculate trend statistics
+  // Calculate trend statistics for amounts
   const trendStats = useMemo(() => {
     if (timeSeriesData.length < 2) return null;
     
     const first = timeSeriesData[0];
     const last = timeSeriesData[timeSeriesData.length - 1];
     
-    const incomingTrend = ((last.incoming - first.incoming) / Math.max(first.incoming, 1)) * 100;
-    const outgoingTrend = ((last.outgoing - first.outgoing) / Math.max(first.outgoing, 1)) * 100;
-    const netTrend = last.net - first.net;
+    const incomingTrend = ((last.incomingAmount - first.incomingAmount) / Math.max(first.incomingAmount, 1)) * 100;
+    const outgoingTrend = ((last.outgoingAmount - first.outgoingAmount) / Math.max(first.outgoingAmount, 1)) * 100;
+    const netTrend = last.netAmount - first.netAmount;
     
-    const totalIncoming = timeSeriesData.reduce((sum, d) => sum + d.incoming, 0);
-    const totalOutgoing = timeSeriesData.reduce((sum, d) => sum + d.outgoing, 0);
+    const totalIncomingAmount = timeSeriesData.reduce((sum, d) => sum + d.incomingAmount, 0);
+    const totalOutgoingAmount = timeSeriesData.reduce((sum, d) => sum + d.outgoingAmount, 0);
     const avgDaily = {
-      incoming: totalIncoming / timeSeriesData.length,
-      outgoing: totalOutgoing / timeSeriesData.length,
-      net: (totalIncoming - totalOutgoing) / timeSeriesData.length
+      incomingAmount: totalIncomingAmount / timeSeriesData.length,
+      outgoingAmount: totalOutgoingAmount / timeSeriesData.length,
+      netAmount: (totalIncomingAmount - totalOutgoingAmount) / timeSeriesData.length
     };
     
     return {
@@ -90,7 +90,12 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
     };
   }, [timeSeriesData]);
 
-  // Custom tooltip
+  // Format currency helper
+  const formatCurrency = (amount: number) => {
+    return `${amount.toLocaleString()} DHS`;
+  };
+
+  // Custom tooltip with currency formatting
   const CustomTooltip = ({ active, payload, label }: {
     active?: boolean;
     payload?: Array<{ color: string; name: string; value: number }>;
@@ -102,7 +107,7 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
           <p className="font-medium text-gray-900">{label}</p>
           {payload.map((entry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.value}
+              {entry.name}: {formatCurrency(entry.value)}
             </p>
           ))}
         </div>
@@ -126,41 +131,41 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
                 textAnchor="end"
                 height={60}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Line 
                 type="monotone" 
-                dataKey="incoming" 
+                dataKey="incomingAmount" 
                 stroke="#10B981" 
                 strokeWidth={2}
-                name="Incoming"
+                name="Money Received"
                 dot={{ r: 4 }}
               />
               <Line 
                 type="monotone" 
-                dataKey="outgoing" 
+                dataKey="outgoingAmount" 
                 stroke="#EF4444" 
                 strokeWidth={2}
-                name="Outgoing"
+                name="Money Spent"
                 dot={{ r: 4 }}
               />
               <Line 
                 type="monotone" 
-                dataKey="avgIncoming" 
+                dataKey="avgIncomingAmount" 
                 stroke="#10B981" 
                 strokeWidth={1}
                 strokeDasharray="5 5"
-                name="Avg Incoming"
+                name="Avg Money Received"
                 dot={false}
               />
               <Line 
                 type="monotone" 
-                dataKey="avgOutgoing" 
+                dataKey="avgOutgoingAmount" 
                 stroke="#EF4444" 
                 strokeWidth={1}
                 strokeDasharray="5 5"
-                name="Avg Outgoing"
+                name="Avg Money Spent"
                 dot={false}
               />
             </LineChart>
@@ -179,26 +184,26 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
                 textAnchor="end"
                 height={60}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Area 
                 type="monotone" 
-                dataKey="incoming" 
+                dataKey="incomingAmount" 
                 stackId="1"
                 stroke="#10B981" 
                 fill="#10B981"
                 fillOpacity={0.6}
-                name="Incoming"
+                name="Money Received"
               />
               <Area 
                 type="monotone" 
-                dataKey="outgoing" 
+                dataKey="outgoingAmount" 
                 stackId="2"
                 stroke="#EF4444" 
                 fill="#EF4444"
                 fillOpacity={0.6}
-                name="Outgoing"
+                name="Money Spent"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -216,11 +221,11 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
                 textAnchor="end"
                 height={60}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="incoming" fill="#10B981" name="Incoming" />
-              <Bar dataKey="outgoing" fill="#EF4444" name="Outgoing" />
+              <Bar dataKey="incomingAmount" fill="#10B981" name="Money Received" />
+              <Bar dataKey="outgoingAmount" fill="#EF4444" name="Money Spent" />
             </BarChart>
           </ResponsiveContainer>
         );
@@ -237,17 +242,17 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
                 textAnchor="end"
                 height={60}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="incoming" fill="#10B981" name="Incoming" />
-              <Bar dataKey="outgoing" fill="#EF4444" name="Outgoing" />
+              <Bar dataKey="incomingAmount" fill="#10B981" name="Money Received" />
+              <Bar dataKey="outgoingAmount" fill="#EF4444" name="Money Spent" />
               <Line 
                 type="monotone" 
-                dataKey="avgNet" 
+                dataKey="avgNetAmount" 
                 stroke="#8B5CF6" 
                 strokeWidth={3}
-                name="Net Trend"
+                name="Net Cash Flow Trend"
                 dot={{ r: 6 }}
               />
             </ComposedChart>
@@ -316,12 +321,12 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Incoming Trend</p>
+                <p className="text-sm font-medium text-gray-600">Money Received Trend</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {trendStats.incomingTrend > 0 ? '+' : ''}{trendStats.incomingTrend.toFixed(1)}%
                 </p>
                 <p className="text-sm text-gray-500">
-                  Avg: {trendStats.avgDaily.incoming.toFixed(1)}/day
+                  Avg: {formatCurrency(trendStats.avgDaily.incomingAmount)}/day
                 </p>
               </div>
               <div className={`p-3 rounded-full ${
@@ -339,12 +344,12 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Outgoing Trend</p>
+                <p className="text-sm font-medium text-gray-600">Money Spent Trend</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {trendStats.outgoingTrend > 0 ? '+' : ''}{trendStats.outgoingTrend.toFixed(1)}%
                 </p>
                 <p className="text-sm text-gray-500">
-                  Avg: {trendStats.avgDaily.outgoing.toFixed(1)}/day
+                  Avg: {formatCurrency(trendStats.avgDaily.outgoingAmount)}/day
                 </p>
               </div>
               <div className={`p-3 rounded-full ${
@@ -362,12 +367,12 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Net Flow</p>
+                <p className="text-sm font-medium text-gray-600">Net Cash Flow</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {trendStats.netTrend > 0 ? '+' : ''}{trendStats.netTrend.toFixed(0)}
+                  {trendStats.netTrend > 0 ? '+' : ''}{formatCurrency(trendStats.netTrend)}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Avg: {trendStats.avgDaily.net.toFixed(1)}/day
+                  Avg: {formatCurrency(trendStats.avgDaily.netAmount)}/day
                 </p>
               </div>
               <div className={`p-3 rounded-full ${
@@ -386,7 +391,7 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-gray-900">
-            Transaction Trends
+            Money Flow Trends
           </h3>
           <div className="text-sm text-gray-600">
             {filteredOperations.length} operations • {timeSeriesData.length} days
@@ -395,9 +400,9 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
         {renderTrendChart()}
       </div>
 
-      {/* Net Flow Chart */}
+      {/* Net Cash Flow Chart */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Net Flow Analysis</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Net Cash Flow Analysis</h3>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={timeSeriesData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -408,15 +413,15 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
               textAnchor="end"
               height={60}
             />
-            <YAxis />
+            <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
             <Tooltip content={<CustomTooltip />} />
             <Area 
               type="monotone" 
-              dataKey="net" 
+              dataKey="netAmount" 
               stroke="#8B5CF6" 
               fill="#8B5CF6"
               fillOpacity={0.3}
-              name="Net Flow"
+              name="Net Cash Flow"
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -424,11 +429,11 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
 
       {/* Activity Heatmap Placeholder */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Activity Pattern</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Money Flow Pattern</h3>
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 28 }, (_, i) => {
-            const activity = Math.random() * 10;
-            const intensity = Math.min(activity / 10, 1);
+            const activity = Math.random() * 1000;
+            const intensity = Math.min(activity / 1000, 1);
             return (
               <div
                 key={i}
@@ -436,7 +441,7 @@ export default function TrendCharts({ operations }: TrendChartsProps) {
                 style={{
                   backgroundColor: `rgba(139, 92, 246, ${intensity})`,
                 }}
-                title={`Day ${i + 1}: ${activity.toFixed(1)} operations`}
+                title={`Day ${i + 1}: ${formatCurrency(activity)}`}
               />
             );
           })}

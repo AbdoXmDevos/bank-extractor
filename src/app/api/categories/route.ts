@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
 
     let categories;
     if (type) {
-      categories = categoryService.getCategoriesForType(type);
+      categories = await categoryService.getCategoriesForType(type);
     } else {
-      categories = categoryService.getCategories();
+      categories = await categoryService.getCategories();
     }
 
     return NextResponse.json({
@@ -42,11 +42,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const newCategory = categoryService.addCategory({
+    const newCategory = await categoryService.addCategory({
       name,
       keywords,
       color: color || '#6B7280',
-      description
+      description,
+      applicableFor: body.applicableFor
     });
     
     return NextResponse.json({
@@ -77,7 +78,7 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const updatedCategory = categoryService.updateCategory(id, updates);
+    const updatedCategory = await categoryService.updateCategory(id, updates);
     
     if (!updatedCategory) {
       return NextResponse.json(

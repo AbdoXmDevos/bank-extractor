@@ -39,6 +39,7 @@ export default function SettingsPage() {
       const response = await fetch('/api/categories');
       const result = await response.json();
       if (result.success) {
+        console.log('Fetched categories:', result.data);
         setCategories(result.data);
       }
     } catch (error) {
@@ -95,7 +96,9 @@ export default function SettingsPage() {
 
       const result = await response.json();
       if (result.success) {
-        setCategories([...categories, result.data]);
+        console.log('Category added successfully:', result.data);
+        // Refresh the categories list to ensure we have the latest data
+        await fetchCategories();
         setNewCategory({ name: '', keywords: '', color: '#6B7280', description: '', applicableFor: ['DEBIT'] });
         setIsAddingNew(false);
       }
@@ -491,7 +494,7 @@ export default function SettingsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <CategoryBadge categoryId={category.id} />
+                        <CategoryBadge categoryId={category.id} category={category} />
                         <span className="text-sm text-gray-500">
                           ({category.keywords.length} keywords)
                         </span>

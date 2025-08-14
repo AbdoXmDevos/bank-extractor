@@ -18,7 +18,7 @@ import {
   ComposedChart,
   Line
 } from 'recharts';
-import { DollarSign, TrendingUp, TrendingDown, Filter } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 import { DashboardOperation, DashboardAnalytics } from '@/lib/dashboardAnalytics';
 
 interface CategoryChartsProps {
@@ -28,6 +28,7 @@ interface CategoryChartsProps {
 export default function CategoryCharts({ operations }: CategoryChartsProps) {
   const [selectedType, setSelectedType] = useState<'All' | 'Incoming' | 'Outgoing'>('All');
   const [chartType, setChartType] = useState<'pie' | 'bar' | 'radial' | 'donut'>('pie');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Filter operations based on selected type
   const filteredOperations = selectedType === 'All' 
@@ -50,18 +51,19 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
       const existing = acc.find(c => c.name === cat.name);
       if (existing) {
         existing.count += cat.count;
-        existing.incoming = (existing.incoming || 0) + (cat.type === 'Incoming' ? cat.count : 0);
-        existing.outgoing = (existing.outgoing || 0) + (cat.type === 'Outgoing' ? cat.count : 0);
+        existing.totalAmount += cat.totalAmount;
+        existing.incoming = (existing.incoming || 0) + (cat.type === 'Incoming' ? cat.totalAmount : 0);
+        existing.outgoing = (existing.outgoing || 0) + (cat.type === 'Outgoing' ? cat.totalAmount : 0);
       } else {
         acc.push({
           ...cat,
-          incoming: cat.type === 'Incoming' ? cat.count : 0,
-          outgoing: cat.type === 'Outgoing' ? cat.count : 0
+          incoming: cat.type === 'Incoming' ? cat.totalAmount : 0,
+          outgoing: cat.type === 'Outgoing' ? cat.totalAmount : 0
         });
       }
       return acc;
     }, [] as any[])
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => b.totalAmount - a.totalAmount);
 
   // Data for current selection
   const currentData = selectedType === 'Incoming' 
@@ -70,7 +72,12 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
     ? outgoingCategories 
     : combinedCategories;
 
-  // Custom tooltip
+  // Format currency helper
+  const formatCurrency = (amount: number) => {
+    return `${amount.toLocaleString()} DHS`;
+  };
+
+  // Custom tooltip with currency formatting
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -78,13 +85,25 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
           <p className="font-medium text-gray-900">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.value} ({((entry.value / filteredOperations.length) * 100).toFixed(1)}%)
+              {entry.name}: {formatCurrency(entry.value)} ({((entry.value / filteredOperations.reduce((sum, op) => sum + op.amount, 0)) * 100).toFixed(1)}%)
             </p>
           ))}
         </div>
       );
     }
     return null;
+  };
+
+  const toggleCategoryExpansion = (categoryName: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName);
+      } else {
+        newSet.add(categoryName);
+      }
+      return newSet;
+    });
   };
 
   // Render different chart types
@@ -99,10 +118,10 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percentage }) => `${name} (${percentage.toFixed(1)}%)`}
+                label={({ name, totalAmount, percentage }) => `${name} (${formatCurrency(totalAmount)})`}
                 outerRadius={120}
                 fill="#8884d8"
-                dataKey="count"
+                dataKey="totalAmount"
               >
                 {currentData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -125,9 +144,9 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
                 height={80}
                 fontSize={12}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]}>
                 {currentData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -142,7 +161,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
             <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="80%" data={currentData}>
               <RadialBar
                 background
-                dataKey="count"
+                dataKey="totalAmount"
               >
                 {currentData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -162,11 +181,11 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percentage }) => `${name} (${percentage.toFixed(1)}%)`}
+                label={({ name, totalAmount, percentage }) => `${name} (${formatCurrency(totalAmount)})`}
                 outerRadius={120}
                 innerRadius={60}
                 fill="#8884d8"
-                dataKey="count"
+                dataKey="totalAmount"
               >
                 {currentData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -231,7 +250,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
             {selectedType === 'All' ? 'All Categories' : `${selectedType} Categories`}
           </h3>
           <div className="text-sm text-gray-600">
-            {currentData.length} categories • {filteredOperations.length} operations
+            {currentData.length} categories • {formatCurrency(filteredOperations.reduce((sum, op) => sum + op.amount, 0))} total
           </div>
         </div>
         {renderChart()}
@@ -240,7 +259,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
       {/* Category Comparison (only for 'All' view) */}
       {selectedType === 'All' && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Incoming vs Outgoing by Category</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Money Received vs Spent by Category</h3>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={combinedCategories} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -251,11 +270,11 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
                 height={80}
                 fontSize={12}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="incoming" fill="#10B981" name="Incoming" />
-              <Bar dataKey="outgoing" fill="#EF4444" name="Outgoing" />
+              <Bar dataKey="incoming" fill="#10B981" name="Money Received" />
+              <Bar dataKey="outgoing" fill="#EF4444" name="Money Spent" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -264,57 +283,78 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
       {/* Category Details Table */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Category Details</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Count
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Percentage
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentData.map((category, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div 
-                        className="w-4 h-4 rounded-full mr-3"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="text-sm font-medium text-gray-900">
-                        {category.name}
-                      </span>
+        
+        {/* Category Accordion */}
+        <div className="space-y-3">
+          {currentData.map((category, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleCategoryExpansion(category.name)}
+                className="w-full p-4 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-inset"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">{category.name}</h4>
+                      <p className="text-sm text-gray-500">
+                        {formatCurrency(category.totalAmount)} • {category.count} operations
+                      </p>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {category.count}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {category.percentage.toFixed(1)}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      category.type === 'Incoming' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {category.type}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">
+                      {category.percentage.toFixed(1)}%
                     </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {expandedCategories.has(category.name) ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+              </button>
+              
+              {expandedCategories.has(category.name) && (
+                <div className="border-t border-gray-200 p-4 bg-gray-50">
+                  <div className="space-y-2">
+                    {operations
+                      .filter(op => {
+                        const opCategory = op.categoryInfo?.name || 'Unknown';
+                        return opCategory === category.name;
+                      })
+                      .map((op, opIndex) => (
+                        <div key={opIndex} className="flex items-center justify-between py-2 px-3 bg-white rounded border">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {op.operation}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {op.date} • {op.status}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatCurrency(op.amount)}
+                            </span>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              op.status === 'Incoming' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {op.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -323,7 +363,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center mb-4">
             <TrendingUp className="w-5 h-5 text-green-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Top Incoming Categories</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Top Receiving Categories</h3>
           </div>
           <div className="space-y-3">
             {incomingCategories.slice(0, 5).map((category, index) => (
@@ -336,7 +376,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
                   <span className="text-sm text-gray-900">{category.name}</span>
                 </div>
                 <div className="text-sm font-medium text-gray-900">
-                  {category.count} ({category.percentage.toFixed(1)}%)
+                  {formatCurrency(category.totalAmount)} ({category.percentage.toFixed(1)}%)
                 </div>
               </div>
             ))}
@@ -346,7 +386,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center mb-4">
             <TrendingDown className="w-5 h-5 text-red-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Top Outgoing Categories</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Top Spending Categories</h3>
           </div>
           <div className="space-y-3">
             {outgoingCategories.slice(0, 5).map((category, index) => (
@@ -359,7 +399,7 @@ export default function CategoryCharts({ operations }: CategoryChartsProps) {
                   <span className="text-sm text-gray-900">{category.name}</span>
                 </div>
                 <div className="text-sm font-medium text-gray-900">
-                  {category.count} ({category.percentage.toFixed(1)}%)
+                  {formatCurrency(category.totalAmount)} ({category.percentage.toFixed(1)}%)
                 </div>
               </div>
             ))}

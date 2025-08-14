@@ -7,6 +7,7 @@ export interface DashboardOperation {
   date: string;
   operation: string;
   status: 'Incoming' | 'Outgoing';
+  amount: number; // Add amount field
   category?: string; // Unified category ID
   categoryInfo?: {
     name: string;
@@ -18,7 +19,7 @@ export interface CategoryStats {
   category: string;
   name: string;
   count: number;
-  totalAmount?: number;
+  totalAmount: number; // Add total amount
   percentage: number;
   color: string;
   type: 'Incoming' | 'Outgoing';
@@ -31,6 +32,9 @@ export interface TimeSeriesData {
   net: number;
   incomingCount: number;
   outgoingCount: number;
+  incomingAmount: number; // Add amount fields
+  outgoingAmount: number;
+  netAmount: number;
 }
 
 export interface DashboardStats {
@@ -40,11 +44,18 @@ export interface DashboardStats {
   netFlow: number;
   incomingCount: number;
   outgoingCount: number;
+  totalIncomingAmount: number; // Add amount fields
+  totalOutgoingAmount: number;
+  netAmount: number;
   averageIncoming: number;
   averageOutgoing: number;
+  averageIncomingAmount: number; // Add average amounts
+  averageOutgoingAmount: number;
   mostActiveDay: string;
   topIncomingCategory: string;
   topOutgoingCategory: string;
+  topIncomingCategoryAmount: number; // Add top category amounts
+  topOutgoingCategoryAmount: number;
 }
 
 export class DashboardAnalytics {
@@ -68,6 +79,7 @@ export class DashboardAnalytics {
       date: transaction.date,
       operation: transaction.operation,
       status: transaction.type === 'CREDIT' ? 'Incoming' : 'Outgoing',
+      amount: transaction.amount || 0, // Include amount with fallback
       category: transaction.category, // Unified category ID
       categoryInfo: {
         name: this.getCategoryDisplayName(transaction.category),
@@ -95,6 +107,52 @@ export class DashboardAnalytics {
   }
 
   /**
+   * Convert operations data to DashboardOperation format (for backward compatibility)
+   */
+  static convertOperationsToDashboardOperations(operationsData: any[]): {
+    operations: DashboardOperation[];
+    metadata: {
+      fileName: string;
+      totalOperations: number;
+      filteredOperations: number;
+      extractDate: string;
+      filters: Record<string, unknown>;
+      groupBy: string;
+    };
+  } {
+    const operations: DashboardOperation[] = operationsData.map((op, index) => ({
+      id: op.id || index + 1,
+      date: op.date,
+      operation: op.operation,
+      status: op.status,
+      amount: op.amount || 0, // Ensure amount exists with fallback
+      category: op.category,
+      categoryInfo: {
+        name: this.getCategoryDisplayName(op.category),
+        color: this.getCategoryColor(op.category)
+      }
+    }));
+
+    return {
+      operations,
+      metadata: {
+        fileName: 'Loaded Operations',
+        totalOperations: operations.length,
+        filteredOperations: operations.length,
+        extractDate: new Date().toISOString(),
+        filters: {
+          searchText: "",
+          status: "all",
+          category: "all",
+          dateFrom: "",
+          dateTo: ""
+        },
+        groupBy: "none"
+      }
+    };
+  }
+
+  /**
    * Get display name for category using unified category system
    */
   private static getCategoryDisplayName(categoryId: string): string {
@@ -103,7 +161,7 @@ export class DashboardAnalytics {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { CategoryService } = require('./categoryService');
       const categoryService = CategoryService.getInstance();
-      const category = categoryService.getCategoryById(categoryId);
+      const category = categoryService.getCategoryByIdSync(categoryId);
       return category ? category.name : categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
     } catch {
       // Fallback if CategoryService is not available
@@ -137,6 +195,11 @@ export class DashboardAnalytics {
     const totalIncoming = incoming.length;
     const totalOutgoing = outgoing.length;
     
+    // Calculate amounts
+    const totalIncomingAmount = incoming.reduce((sum, op) => sum + op.amount, 0);
+    const totalOutgoingAmount = outgoing.reduce((sum, op) => sum + op.amount, 0);
+    const netAmount = totalIncomingAmount - totalOutgoingAmount;
+    
     // Calculate most active day
     const dayCount = operations.reduce((acc, op) => {
       const date = this.normalizeDate(op.date);
@@ -147,12 +210,14 @@ export class DashboardAnalytics {
     const mostActiveDay = Object.entries(dayCount)
       .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
     
-    // Calculate top categories
+    // Calculate top categories by amount
     const incomingCategories = this.getCategoryBreakdown(incoming, 'Incoming');
     const outgoingCategories = this.getCategoryBreakdown(outgoing, 'Outgoing');
     
     const topIncomingCategory = incomingCategories[0]?.name || 'None';
     const topOutgoingCategory = outgoingCategories[0]?.name || 'None';
+    const topIncomingCategoryAmount = incomingCategories[0]?.totalAmount || 0;
+    const topOutgoingCategoryAmount = outgoingCategories[0]?.totalAmount || 0;
     
     return {
       totalOperations: operations.length,
@@ -161,11 +226,18 @@ export class DashboardAnalytics {
       netFlow: totalIncoming - totalOutgoing,
       incomingCount: totalIncoming,
       outgoingCount: totalOutgoing,
+      totalIncomingAmount,
+      totalOutgoingAmount,
+      netAmount,
       averageIncoming: totalIncoming > 0 ? totalIncoming / this.getUniqueDays(incoming).length : 0,
       averageOutgoing: totalOutgoing > 0 ? totalOutgoing / this.getUniqueDays(outgoing).length : 0,
+      averageIncomingAmount: totalIncoming > 0 ? totalIncomingAmount / totalIncoming : 0,
+      averageOutgoingAmount: totalOutgoing > 0 ? totalOutgoingAmount / totalOutgoing : 0,
       mostActiveDay,
       topIncomingCategory,
-      topOutgoingCategory
+      topOutgoingCategory,
+      topIncomingCategoryAmount,
+      topOutgoingCategoryAmount
     };
   }
 
@@ -175,6 +247,7 @@ export class DashboardAnalytics {
   static getCategoryBreakdown(operations: DashboardOperation[], type: 'Incoming' | 'Outgoing'): CategoryStats[] {
     const categoryMap = new Map<string, {
       count: number;
+      totalAmount: number;
       name: string;
       color: string;
     }>();
@@ -189,7 +262,7 @@ export class DashboardAnalytics {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { CategoryService } = require('./categoryService');
         const categoryService = CategoryService.getInstance();
-        const category = categoryService.getCategoryById(categoryKey);
+        const category = categoryService.getCategoryByIdSync(categoryKey);
         if (category) {
           categoryName = category.name;
           categoryColor = category.color;
@@ -201,10 +274,13 @@ export class DashboardAnalytics {
       }
 
       if (categoryMap.has(categoryKey)) {
-        categoryMap.get(categoryKey)!.count++;
+        const existing = categoryMap.get(categoryKey)!;
+        existing.count++;
+        existing.totalAmount += op.amount;
       } else {
         categoryMap.set(categoryKey, {
           count: 1,
+          totalAmount: op.amount,
           name: categoryName,
           color: categoryColor
         });
@@ -212,17 +288,19 @@ export class DashboardAnalytics {
     });
 
     const total = operations.length;
+    const totalAmount = operations.reduce((sum, op) => sum + op.amount, 0);
     
     return Array.from(categoryMap.entries())
       .map(([category, data]) => ({
         category,
         name: data.name,
         count: data.count,
-        percentage: (data.count / total) * 100,
+        totalAmount: data.totalAmount,
+        percentage: (data.totalAmount / totalAmount) * 100, // Use amount percentage instead of count
         color: data.color,
         type
       }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => b.totalAmount - a.totalAmount); // Sort by amount instead of count
   }
 
   /**
@@ -234,6 +312,8 @@ export class DashboardAnalytics {
       outgoing: number;
       incomingCount: number;
       outgoingCount: number;
+      incomingAmount: number;
+      outgoingAmount: number;
     }>();
 
     operations.forEach(op => {
@@ -244,7 +324,9 @@ export class DashboardAnalytics {
           incoming: 0,
           outgoing: 0,
           incomingCount: 0,
-          outgoingCount: 0
+          outgoingCount: 0,
+          incomingAmount: 0,
+          outgoingAmount: 0
         });
       }
 
@@ -252,9 +334,11 @@ export class DashboardAnalytics {
       if (op.status === 'Incoming') {
         dayData.incoming++;
         dayData.incomingCount++;
+        dayData.incomingAmount += op.amount;
       } else {
         dayData.outgoing++;
         dayData.outgoingCount++;
+        dayData.outgoingAmount += op.amount;
       }
     });
 
@@ -265,7 +349,10 @@ export class DashboardAnalytics {
         outgoing: data.outgoing,
         net: data.incoming - data.outgoing,
         incomingCount: data.incomingCount,
-        outgoingCount: data.outgoingCount
+        outgoingCount: data.outgoingCount,
+        incomingAmount: data.incomingAmount,
+        outgoingAmount: data.outgoingAmount,
+        netAmount: data.incomingAmount - data.outgoingAmount
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
@@ -278,18 +365,29 @@ export class DashboardAnalytics {
     count: number;
     incoming: number;
     outgoing: number;
+    incomingAmount: number;
+    outgoingAmount: number;
+    netAmount: number;
   }> {
     const dailyMap = new Map<string, {
       count: number;
       incoming: number;
       outgoing: number;
+      incomingAmount: number;
+      outgoingAmount: number;
     }>();
 
     operations.forEach(op => {
       const date = this.normalizeDate(op.date);
       
       if (!dailyMap.has(date)) {
-        dailyMap.set(date, { count: 0, incoming: 0, outgoing: 0 });
+        dailyMap.set(date, { 
+          count: 0, 
+          incoming: 0, 
+          outgoing: 0, 
+          incomingAmount: 0, 
+          outgoingAmount: 0 
+        });
       }
 
       const dayData = dailyMap.get(date)!;
@@ -297,15 +395,18 @@ export class DashboardAnalytics {
       
       if (op.status === 'Incoming') {
         dayData.incoming++;
+        dayData.incomingAmount += op.amount;
       } else {
         dayData.outgoing++;
+        dayData.outgoingAmount += op.amount;
       }
     });
 
     return Array.from(dailyMap.entries())
       .map(([date, data]) => ({
         date,
-        ...data
+        ...data,
+        netAmount: data.incomingAmount - data.outgoingAmount
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }

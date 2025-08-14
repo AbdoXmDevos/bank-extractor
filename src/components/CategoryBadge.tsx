@@ -1,24 +1,63 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CategoryService } from '@/lib/categoryService';
+import { Category } from '@/types/transaction';
 
 interface CategoryBadgeProps {
   categoryId: string;
+  category?: Category; // Optional category data to avoid async loading
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
   className?: string;
 }
 
-export default function CategoryBadge({ 
-  categoryId, 
-  size = 'md', 
-  showIcon = false, 
-  className = '' 
+export default function CategoryBadge({
+  categoryId,
+  category: providedCategory,
+  size = 'md',
+  showIcon = false,
+  className = ''
 }: CategoryBadgeProps) {
+  const [category, setCategory] = useState<Category | null>(providedCategory || null);
+  const [loading, setLoading] = useState(!providedCategory);
   const categoryService = CategoryService.getInstance();
-  const category = categoryService.getCategoryById(categoryId);
-  
+
+  useEffect(() => {
+    // If category is provided, use it directly
+    if (providedCategory) {
+      setCategory(providedCategory);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, load it asynchronously
+    const loadCategory = async () => {
+      try {
+        setLoading(true);
+        console.log('Loading category for ID:', categoryId);
+        const cat = await categoryService.getCategoryById(categoryId);
+        console.log('Loaded category:', cat);
+        setCategory(cat || null);
+      } catch (error) {
+        console.error('Failed to load category:', error);
+        setCategory(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategory();
+  }, [categoryId, providedCategory]);
+
+  if (loading) {
+    return (
+      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 ${className}`}>
+        Loading...
+      </span>
+    );
+  }
+
   if (!category) {
     return (
       <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 ${className}`}>

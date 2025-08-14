@@ -45,7 +45,7 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
     'Outgoing'
   );
 
-  // Custom tooltip for charts
+  // Custom tooltip for charts with currency formatting
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -53,7 +53,7 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
           <p className="font-medium text-gray-900">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.value}
+              {entry.name}: {typeof entry.value === 'number' ? `${entry.value.toLocaleString()} DHS` : entry.value}
             </p>
           ))}
         </div>
@@ -62,35 +62,40 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
     return null;
   };
 
-  // Stats cards data
+  // Format currency helper
+  const formatCurrency = (amount: number) => {
+    return `${amount.toLocaleString()} DHS`;
+  };
+
+  // Stats cards data - focus on monetary amounts
   const statsCards = [
     {
-      title: 'Total Operations',
-      value: stats.totalOperations,
-      icon: Activity,
-      color: 'blue',
-      change: null
-    },
-    {
-      title: 'Incoming',
-      value: stats.totalIncoming,
+      title: 'Total Money Received',
+      value: formatCurrency(stats.totalIncomingAmount),
       icon: TrendingUp,
       color: 'green',
-      change: `${((stats.totalIncoming / stats.totalOperations) * 100).toFixed(1)}%`
+      change: `${stats.incomingCount}  operations`
     },
     {
-      title: 'Outgoing',
-      value: stats.totalOutgoing,
+      title: 'Total Money Spent',
+      value: formatCurrency(stats.totalOutgoingAmount),
       icon: TrendingDown,
       color: 'red',
-      change: `${((stats.totalOutgoing / stats.totalOperations) * 100).toFixed(1)}%`
+      change: `${stats.outgoingCount} operations`
     },
     {
-      title: 'Net Flow',
-      value: stats.netFlow,
+      title: 'Net Cash Flow',
+      value: formatCurrency(stats.netAmount),
       icon: DollarSign,
-      color: stats.netFlow >= 0 ? 'green' : 'red',
-      change: stats.netFlow >= 0 ? 'Positive' : 'Negative'
+      color: stats.netAmount >= 0 ? 'green' : 'red',
+      change: stats.netAmount >= 0 ? 'Positive' : 'Negative'
+    },
+    {
+      title: 'Average Transaction',
+      value: formatCurrency((stats.totalIncomingAmount + stats.totalOutgoingAmount) / stats.totalOperations),
+      icon: Activity,
+      color: 'blue',
+      change: `${stats.totalOperations} total operations`
     }
   ];
 
@@ -115,7 +120,7 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                   {stat.change && (
                     <p className={`text-sm ${getColorClass(stat.color, 'text')}`}>
                       {stat.change}
@@ -133,9 +138,9 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Daily Activity Line Chart */}
+        {/* Daily Money Flow Line Chart */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Money Flow</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={dailyActivity}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -146,30 +151,30 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
                 textAnchor="end"
                 height={60}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Line 
                 type="monotone" 
-                dataKey="incoming" 
+                dataKey="incomingAmount" 
                 stroke="#10B981" 
                 strokeWidth={2}
-                name="Incoming"
+                name="Money Received"
               />
               <Line 
                 type="monotone" 
-                dataKey="outgoing" 
+                dataKey="outgoingAmount" 
                 stroke="#EF4444" 
                 strokeWidth={2}
-                name="Outgoing"
+                name="Money Spent"
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Incoming vs Outgoing Bar Chart */}
+        {/* Money Received vs Spent Bar Chart */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Incoming vs Outgoing</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Money Received vs Spent</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={timeSeriesData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -180,18 +185,18 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
                 textAnchor="end"
                 height={60}
               />
-              <YAxis />
+              <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="incoming" fill="#10B981" name="Incoming" />
-              <Bar dataKey="outgoing" fill="#EF4444" name="Outgoing" />
+              <Bar dataKey="incomingAmount" fill="#10B981" name="Money Received" />
+              <Bar dataKey="outgoingAmount" fill="#EF4444" name="Money Spent" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Incoming Categories Pie Chart */}
+        {/* Incoming Categories by Amount Pie Chart */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Incoming Categories</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Money Received by Category</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -199,10 +204,10 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percentage }) => `${name} (${percentage.toFixed(1)}%)`}
+                label={({ name, totalAmount, percentage }) => `${name} (${formatCurrency(totalAmount)})`}
                 outerRadius={100}
                 fill="#8884d8"
-                dataKey="count"
+                dataKey="totalAmount"
               >
                 {incomingCategories.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -213,9 +218,9 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
           </ResponsiveContainer>
         </div>
 
-        {/* Outgoing Categories Pie Chart */}
+        {/* Outgoing Categories by Amount Pie Chart */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Outgoing Categories</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Money Spent by Category</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -223,10 +228,10 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percentage }) => `${name} (${percentage.toFixed(1)}%)`}
+                label={({ name, totalAmount, percentage }) => `${name} (${formatCurrency(totalAmount)})`}
                 outerRadius={100}
                 fill="#8884d8"
-                dataKey="count"
+                dataKey="totalAmount"
               >
                 {outgoingCategories.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -238,9 +243,9 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
         </div>
       </div>
 
-      {/* Net Flow Area Chart */}
+      {/* Net Cash Flow Area Chart */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Net Flow Trend</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Net Cash Flow Trend</h3>
         <ResponsiveContainer width="100%" height={400}>
           <AreaChart data={timeSeriesData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -251,15 +256,15 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
               textAnchor="end"
               height={60}
             />
-            <YAxis />
+            <YAxis tickFormatter={(value) => `${value.toLocaleString()} DHS`} />
             <Tooltip content={<CustomTooltip />} />
             <Area 
               type="monotone" 
-              dataKey="net" 
+              dataKey="netAmount" 
               stroke="#8B5CF6" 
               fill="#8B5CF6" 
               fillOpacity={0.3}
-              name="Net Flow"
+              name="Net Cash Flow"
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -267,19 +272,25 @@ export default function OverviewCharts({ operations }: OverviewChartsProps) {
 
       {/* Summary Stats */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Summary Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Summary</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="text-center">
-            <p className="text-sm text-gray-600">Most Active Day</p>
-            <p className="text-lg font-semibold text-gray-900">{stats.mostActiveDay || 'N/A'}</p>
+            <p className="text-sm text-gray-600">Average Money Received</p>
+            <p className="text-lg font-semibold text-green-600">{formatCurrency(stats.averageIncomingAmount)}</p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Top Incoming Category</p>
+            <p className="text-sm text-gray-600">Average Money Spent</p>
+            <p className="text-lg font-semibold text-red-600">{formatCurrency(stats.averageOutgoingAmount)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Top Receiving Category</p>
             <p className="text-lg font-semibold text-green-600">{stats.topIncomingCategory}</p>
+            <p className="text-sm text-gray-500">{formatCurrency(stats.topIncomingCategoryAmount)}</p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Top Outgoing Category</p>
+            <p className="text-sm text-gray-600">Top Spending Category</p>
             <p className="text-lg font-semibold text-red-600">{stats.topOutgoingCategory}</p>
+            <p className="text-sm text-gray-500">{formatCurrency(stats.topOutgoingCategoryAmount)}</p>
           </div>
         </div>
       </div>
